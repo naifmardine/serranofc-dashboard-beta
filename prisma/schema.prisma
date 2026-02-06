@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String?
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(CLIENT)
+  image        String?
+  createdAt    DateTime @default(now())
+
+  mustChangePassword Boolean @default(false)
+}
+
+model Club {
+  id        String   @id @default(uuid())
+  nome      String
+  slug      String   @unique
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // --- Localização (fonte de verdade pro mapa) ---
+  countryCode   String?
+  countryName   String?
+  stateCode     String?
+  stateName     String?
+  city          String?
+  continentCode String?
+
+  players Player[] // <- lado 1:N
+
+  @@index([countryCode])
+  @@index([stateCode])
+  @@index([continentCode])
+}
+
+model Player {
+  id                 String    @id @default(uuid())
+  nome               String
+  idade              Int
+  posicao            String
+  peDominante        String
+  valorMercado       Float
+  altura             Float?
+  situacao           String?
+  imagemUrl          String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  numeroCamisa       Int?
+  representacao      String?
+  possePct           Float?
+  anoNascimento      Int?
+  cidade             String?
+  clausulas          Json?
+  comissao           Float?
+  dataTransferencia  DateTime?
+  direitosSerrano    Float?
+  empresario         String?
+  idadeTransfRef     Float?
+  instagramHandle    String?
+  instagramPosts     Json?
+  nacionalidade      String?
+  observacoes        String?
+  parceria           String?
+  passaporte         Json?
+  percPrimeiraOpcao  Float?
+  percSegundaOpcao   Float?
+  prazoPrimeiraOpcao Float?
+  prazoSegundaOpcao  Float?
+  qtdTransfRef       Float?
+  racionalProspecao  String?
+  selecao            Json?
+  statsPorTemporada  Json?
+  tempoAteIdadeVenda Float?
+  valorPrimeiraOpcao Float?
+  valorProsp         Float?
+  valorSegundaOpcao  Float?
+  valorTransfRef     Float?
+  videoUrl           String?
+  xUrl               String?
+  youtubeUrl         String?
+
+  clubeId String?
+  clube   Club?   @relation(fields: [clubeId], references: [id], onDelete: SetNull)
+
+  @@index([clubeId])
+}
+
+model Transferencia {
+  id                  String    @id @default(cuid())
+  atletaNome          String
+  atletaIdade         Int?
+  atletaPosicao       String?
+  clubeFormador       String?
+  cidadeClubeFormador String?
+  paisClubeFormador   String?
+  clubeOrigem         String?
+  clubeDestino        String?
+  cidadeClubeDestino  String?
+  paisClubeDestino    String?
+  dataTransferencia   DateTime?
+  valor               Decimal?  @db.Decimal(14, 2)
+  moeda               String?
+  fonte               String?
+  criadoEm            DateTime  @default(now())
+
+  @@index([atletaNome])
+  @@index([atletaPosicao])
+  @@index([dataTransferencia])
+  @@index([paisClubeDestino])
+}
+
+enum Role {
+  ADMIN
+  CLIENT
+}

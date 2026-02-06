@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+/* valor padrão da sidebar (expandida) pra evitar o "flash" */
+:root {
+  --sb-width: 248px;
+}
+
+.no-scroll {
+  overflow: hidden;
+}
+
+/* Scrollbar da sidebar — fina, arredondada e branca translúcida */
+.sidebar-scroll {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.input {
+  @apply w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-[#003399] focus:ring-1 focus:ring-[#003399] bg-white;
+}
