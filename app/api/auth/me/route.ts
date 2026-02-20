@@ -1,18 +1,35 @@
+// app/api/auth/me/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_in_prod";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-function extractToken(authHeader?: string | null): string | null {
+const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_in_prod";
+const COOKIE_NAME = "sfc_token";
+
+type Decoded = { sub: string; role: "ADMIN" | "CLIENT" };
+
+function extractBearerToken(authHeader?: string | null): string | null {
   if (!authHeader) return null;
   const match = /^Bearer\s+(.+)$/i.exec(authHeader.trim());
-  return match?.[1] || null;
+  return match?.[1] ?? null;
 }
 
-function verifyToken(token: string): { sub: string; role: string } | null {
+function getTokenFromReq(req: NextRequest): string | null {
+  const bearer = extractBearerToken(req.headers.get("authorization"));
+  if (bearer) return bearer;
+  return req.cookies.get(COOKIE_NAME)?.value ?? null;
+}
+
+function verifyToken(token: string): Decoded | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { sub: string; role: string };
+    const payload = jwt.verify(token, JWT_SECRET) as any;
+    const sub = typeof payload?.sub === "string" ? payload.sub : null;
+    const role = payload?.role === "ADMIN" || payload?.role === "CLIENT" ? payload.role : null;
+    if (!sub || !role) return null;
+    return { sub, role };
   } catch {
     return null;
   }
@@ -20,17 +37,14 @@ function verifyToken(token: string): { sub: string; role: string } | null {
 
 export async function GET(req: NextRequest) {
   try {
-    const token =
-      extractToken(req.headers.get("authorization")) ||
-      req.cookies.get("sfc_token")?.value ||
-      null;
-
+    const token = getTokenFromReq(req);
     if (!token) {
       return NextResponse.json({ error: "Token ausente" }, { status: 401 });
     }
 
     const decoded = verifyToken(token);
     if (!decoded?.sub) {
+      // importante: 401 (não 404)
       return NextResponse.json({ error: "Token inválido ou expirado" }, { status: 401 });
     }
 
@@ -48,18 +62,17 @@ export async function GET(req: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+      // também: 401 é melhor aqui do que 404 pro fluxo de auth
+      // 404 faz cliente pensar “rota quebrada” quando na real é sessão inválida
+      return NextResponse.json({ error: "Sessão inválida" }, { status: 401 });
     }
 
     // renova token
-    const newToken = jwt.sign({ sub: user.id, role: user.role }, JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const newToken = jwt.sign({ sub: user.id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
 
     const res = NextResponse.json({ user, token: newToken });
 
-    // renova cookie também
-    res.cookies.set("sfc_token", newToken, {
+    res.cookies.set(COOKIE_NAME, newToken, {
       httpOnly: true,
       sameSite: "lax",
       path: "/",
@@ -68,8 +81,8 @@ export async function GET(req: NextRequest) {
     });
 
     return res;
-  } catch (err: any) {
+  } catch (err) {
     console.error("Erro em /api/auth/me:", err);
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }

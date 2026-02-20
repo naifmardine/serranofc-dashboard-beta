@@ -1,12 +1,12 @@
 export type WidgetScope = "serrano" | "market" | "both";
+export type DashboardView = "serrano" | "market" | "both" | "compare";
 
 export type WidgetGroup =
-  | "overview"
   | "serrano"
   | "market"
-  | "compare"
-  | "finance"
-  | "performance";
+  | "overview"  
+  | "compare";
+
 
 export type WidgetId =
   // Map
@@ -22,9 +22,10 @@ export type WidgetId =
   | "serrano.age_distribution"
   | "serrano.position_distribution"
   | "serrano.market_value_top_players"
-  | "serrano.value_over_time"
   | "serrano.age_vs_value_scatter"
   | "serrano.representation_ranking"
+  | "serrano.rights_distribution"
+  | "serrano.age_by_position"
   // MARKET
   | "market.deals_by_month"
   | "market.fee_by_month"
@@ -88,15 +89,11 @@ export type WidgetDefinition = {
 
 export type DashboardLayout = {
   version: number;
-  scope: WidgetScope;
+  view: DashboardView;
 
-  // quais aparecem
   enabled: WidgetId[];
-
-  // ordem no grid
   order: WidgetId[];
 
-  // tamanhos por widget (para customização futura)
   sizes?: Partial<Record<WidgetId, WidgetSize>>;
 };
 
@@ -123,6 +120,12 @@ export type PlayerMini = {
   clube: { id: string; nome: string; logoUrl: string | null } | null;
 };
 
+export type BarToggleOption = {
+  id: string;
+  label: string;
+  data: BarDatum[];
+};
+
 export type GeoMapData = {
   counts: {
     byCountry: Record<string, number>;
@@ -142,6 +145,7 @@ export type WidgetDataResponse =
   | { kind: "scatter"; data: ScatterDatum[] }
   | { kind: "hist"; data: HistogramDatum[] }
   | { kind: "geo_map"; data: GeoMapData }
+  | { kind: "bar_toggle"; options: BarToggleOption[]; defaultId?: string }
   | { kind: "empty"; reason: string; hint?: string };
 
 export type WidgetApiSuccess = {
@@ -170,3 +174,4 @@ export type KpisApiSuccess = {
 };
 
 export type KpisApiResponse = KpisApiSuccess | { ok: false; error: string };
+

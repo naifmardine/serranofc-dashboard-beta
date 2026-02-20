@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useAuth } from "@/auth/AuthContext";
+import { useAuth } from "../../auth/AuthContext";
 import { useRouter } from "next/navigation";
 import {
   PlusCircle,
@@ -12,6 +12,7 @@ import {
   RefreshCcw,
 } from "lucide-react";
 
+import PageTitle from "@/components/Atoms/PageTitle";
 import AdminRow from "@/components/AdminRow";
 import AdminButton from "@/components/Atoms/AdminButton";
 import ConfirmDeleteDialog from "@/components/Atoms/ConfirmDeleteDialog";
@@ -64,7 +65,7 @@ function generateStrongPassword(length = 20) {
   let pwd = pick(upper) + pick(lower) + pick(digits) + pick(symbols);
 
   const remaining = Math.max(0, length - pwd.length);
-  const bytes = new Uint32Array(remaining);
+  const bytes = new Uint32Array(Math.max(remaining, 1));
   crypto.getRandomValues(bytes);
 
   for (let i = 0; i < remaining; i++) {
@@ -74,9 +75,7 @@ function generateStrongPassword(length = 20) {
   // embaralha
   const arr = pwd.split("");
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = bytes.length
-      ? bytes[i % bytes.length] % (i + 1)
-      : Math.floor(Math.random() * (i + 1));
+    const j = bytes[i % bytes.length] % (i + 1);
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
 
@@ -281,8 +280,7 @@ export default function AdminUsersPage() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      const msg =
-        (data && (data.error || data.message)) || `Erro HTTP ${res.status}`;
+      const msg = (data && (data.error || data.message)) || `Erro HTTP ${res.status}`;
       throw new Error(msg);
     }
 
@@ -296,14 +294,22 @@ export default function AdminUsersPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-gray-500">Carregando...</div>
       </div>
     );
   }
 
+  const headerActions = (
+    <AdminButton
+      label="Novo Usuário"
+      icon={PlusCircle}
+      onClick={() => setShowCreateModal(true)}
+    />
+  );
+
   return (
-    <section className="p-6 max-w-6xl mx-auto">
+    <section className="mx-auto w-full max-w-6xl bg-gray-50 p-6">
       {/* popup copiar senha */}
       <CopySecretDialog
         open={copyOpen}
@@ -330,15 +336,14 @@ export default function AdminUsersPage() {
         onConfirm={confirmDelete}
       />
 
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold">Admin → Usuários</h1>
-
-        <AdminButton
-          label="Novo Usuário"
-          icon={PlusCircle}
-          onClick={() => setShowCreateModal(true)}
-        />
-      </div>
+      <PageTitle
+        base="Admin"
+        title="Usuários"
+        subtitle="Gerencie acessos (criar, editar nome e remover usuários)."
+        actions={headerActions}
+        className="mb-6"
+        crumbLabel="Usuários"
+      />
 
       {(error || success) && (
         <div className="mb-4 space-y-2">
@@ -355,44 +360,44 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-[0.4fr_1.6fr_1fr_1fr_0.7fr] text-xs font-semibold text-gray-500 uppercase border-b border-gray-300 pb-2 mb-2">
-        <span></span>
-        <span>Usuário</span>
-        <span>Criado em</span>
-        <span></span>
-        <span className="text-right pr-3">Ações</span>
-      </div>
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+        <div className="grid grid-cols-[0.4fr_1.6fr_1fr_1fr_0.7fr] border-b border-gray-200 bg-gray-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-700">
+          <span />
+          <span>Usuário</span>
+          <span>Criado em</span>
+          <span />
+          <span className="pr-1 text-right">Ações</span>
+        </div>
 
-      {isLoadingUsers ? (
-        <div className="py-10 text-center text-gray-500">
-          Carregando usuários...
-        </div>
-      ) : users.length === 0 ? (
-        <div className="py-10 text-center text-gray-500">
-          Nenhum usuário encontrado
-        </div>
-      ) : (
-        users.map((u) => (
-          <AdminRow
-            key={u.id}
-            foto={u.image}
-            title={u.name || "—"}
-            subtitle={`${u.email} • ${roleLabel(u.role)}`}
-            createdAt={formatCreatedAt(u.createdAt)}
-            actions={[
-              { icon: Pencil, color: "yellow", onClick: () => openEditModal(u) },
-              {
-                icon: Trash,
-                color: "red",
-                onClick: () => {
-                  setDelTarget(u);
-                  setDelOpen(true);
-                },
-              },
-            ]}
-          />
-        ))
-      )}
+        {isLoadingUsers ? (
+          <div className="py-10 text-center text-gray-500">Carregando usuários...</div>
+        ) : users.length === 0 ? (
+          <div className="py-10 text-center text-gray-500">Nenhum usuário encontrado</div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {users.map((u) => (
+              <AdminRow
+                key={u.id}
+                foto={u.image}
+                title={u.name || "—"}
+                subtitle={`${u.email} • ${roleLabel(u.role)}`}
+                createdAt={formatCreatedAt(u.createdAt)}
+                actions={[
+                  { icon: Pencil, color: "yellow", onClick: () => openEditModal(u) },
+                  {
+                    icon: Trash,
+                    color: "red",
+                    onClick: () => {
+                      setDelTarget(u);
+                      setDelOpen(true);
+                    },
+                  },
+                ]}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Modal Criação */}
       {showCreateModal && (
@@ -402,15 +407,12 @@ export default function AdminUsersPage() {
             onClick={() => !isSubmitting && setShowCreateModal(false)}
           />
           <div className="absolute inset-0 grid place-items-center px-4">
-            <div className="w-full max-w-[520px] rounded-2xl border border-gray-200 bg-white shadow-[0_18px_60px_rgba(0,0,0,0.18)] overflow-hidden">
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="w-full max-w-[520px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
+              <div className="flex items-center justify-between border-b border-gray-200 p-4">
                 <div>
-                  <div className="text-sm font-extrabold text-slate-900">
-                    Criar usuário
-                  </div>
+                  <div className="text-sm font-extrabold text-slate-900">Criar usuário</div>
                   <div className="mt-1 text-xs text-gray-600">
-                    A senha é gerada automaticamente e será trocada no primeiro
-                    login.
+                    A senha é gerada automaticamente e será trocada no primeiro login.
                   </div>
                 </div>
 
@@ -423,61 +425,48 @@ export default function AdminUsersPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleCreateUser} className="p-4 space-y-4">
+              <form onSubmit={handleCreateUser} className="space-y-4 p-4">
                 <div>
-                  <label className="block text-sm font-semibold mb-1">
-                    Nome
-                  </label>
+                  <label className="mb-1 block text-sm font-semibold">Nome</label>
                   <div className="relative">
-                    <UserIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <UserIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
                       type="text"
                       value={newUser.name}
-                      onChange={(e) =>
-                        setNewUser({ ...newUser, name: e.target.value })
-                      }
+                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                       required
                       disabled={isSubmitting}
-                      className="w-full pl-9 pr-3 py-2 rounded-[10px] border border-gray-300 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
+                      className="w-full rounded-[10px] border border-gray-300 py-2 pl-9 pr-3 text-sm text-gray-900 shadow-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
                       placeholder="Nome completo"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold mb-1">
-                    Email
-                  </label>
+                  <label className="mb-1 block text-sm font-semibold">Email</label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
                       type="email"
                       value={newUser.email}
-                      onChange={(e) =>
-                        setNewUser({ ...newUser, email: e.target.value })
-                      }
+                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                       required
                       disabled={isSubmitting}
-                      className="w-full pl-9 pr-3 py-2 rounded-[10px] border border-gray-300 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
+                      className="w-full rounded-[10px] border border-gray-300 py-2 pl-9 pr-3 text-sm text-gray-900 shadow-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
                       placeholder="usuario@example.com"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold mb-1">
-                    Tipo de acesso
-                  </label>
+                  <label className="mb-1 block text-sm font-semibold">Tipo de acesso</label>
                   <select
                     value={newUser.role}
                     onChange={(e) =>
-                      setNewUser({
-                        ...newUser,
-                        role: e.target.value as Role,
-                      })
+                      setNewUser({ ...newUser, role: e.target.value as Role })
                     }
                     disabled={isSubmitting}
-                    className="w-full px-3 py-2 rounded-[10px] border border-gray-300 bg-white text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
+                    className="w-full rounded-[10px] border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
                   >
                     <option value="CLIENT">Cliente</option>
                     <option value="ADMIN">Administrador</option>
@@ -486,15 +475,13 @@ export default function AdminUsersPage() {
 
                 {/* senha gerada */}
                 <div>
-                  <label className="block text-sm font-semibold mb-1">
-                    Senha temporária
-                  </label>
+                  <label className="mb-1 block text-sm font-semibold">Senha temporária</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       readOnly
                       value={tempPassword}
-                      className="flex-1 px-3 py-2 rounded-[10px] border border-gray-300 bg-gray-50 text-sm text-gray-900 shadow-sm"
+                      className="flex-1 rounded-[10px] border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 shadow-sm"
                     />
                     <button
                       type="button"
@@ -503,7 +490,7 @@ export default function AdminUsersPage() {
                       className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 disabled:opacity-60"
                       title="Gerar outra"
                     >
-                      <RefreshCcw className="w-4 h-4" />
+                      <RefreshCcw className="h-4 w-4" />
                       Gerar
                     </button>
                   </div>
@@ -513,7 +500,7 @@ export default function AdminUsersPage() {
                   </p>
                 </div>
 
-                <div className="pt-2 flex justify-end gap-2">
+                <div className="flex justify-end gap-2 pt-2">
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
@@ -545,12 +532,10 @@ export default function AdminUsersPage() {
             onClick={() => !isSubmitting && setShowEditModal(false)}
           />
           <div className="absolute inset-0 grid place-items-center px-4">
-            <div className="w-full max-w-[520px] rounded-2xl border border-gray-200 bg-white shadow-[0_18px_60px_rgba(0,0,0,0.18)] overflow-hidden">
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="w-full max-w-[520px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
+              <div className="flex items-center justify-between border-b border-gray-200 p-4">
                 <div>
-                  <div className="text-sm font-extrabold text-slate-900">
-                    Editar usuário
-                  </div>
+                  <div className="text-sm font-extrabold text-slate-900">Editar usuário</div>
                   <div className="mt-1 text-xs text-gray-600">
                     Ajuste apenas o nome (como antes).
                   </div>
@@ -570,19 +555,17 @@ export default function AdminUsersPage() {
                   e.preventDefault();
                   handleUpdateUser(editUser.id);
                 }}
-                className="p-4 space-y-4"
+                className="space-y-4 p-4"
               >
                 <div>
-                  <label className="block text-sm font-semibold mb-1">
-                    Nome
-                  </label>
+                  <label className="mb-1 block text-sm font-semibold">Nome</label>
                   <input
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     required
                     disabled={isSubmitting}
-                    className="w-full px-3 py-2 rounded-[10px] border border-gray-300 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
+                    className="w-full rounded-[10px] border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
                   />
                 </div>
 
@@ -595,13 +578,11 @@ export default function AdminUsersPage() {
                   </div>
                   <div className="mt-1 text-xs text-gray-600">
                     Tipo:{" "}
-                    <span className="font-semibold">
-                      {roleLabel(editUser.role)}
-                    </span>
+                    <span className="font-semibold">{roleLabel(editUser.role)}</span>
                   </div>
                 </div>
 
-                <div className="pt-2 flex justify-end gap-2">
+                <div className="flex justify-end gap-2 pt-2">
                   <button
                     type="button"
                     onClick={() => setShowEditModal(false)}

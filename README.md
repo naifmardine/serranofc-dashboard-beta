@@ -148,7 +148,7 @@ enum Role {
 
 ## Features Implementadas
 
-### ✅ P0 - Autenticação Completa
+###  P0 - Autenticação Completa
 
 - [x] Login funcional com hash de senha (bcryptjs)
 - [x] Geração de JWT tokens (7 dias)
@@ -160,7 +160,7 @@ enum Role {
 - Admin: `admin@serrano.com` / `admin@2025`
 - Client: `cliente@serrano.com` / `cliente@2025`
 
-### ✅ P1 - Gestão de Usuários
+###  P1 - Gestão de Usuários
 
 - [x] Página de perfil (`/perfil`)
   - Visualizar dados do usuário
@@ -175,7 +175,7 @@ enum Role {
   - Deletar usuário
   - Validação de email único
 
-### ✅ P2 - Jogadores e Filtros
+###  P2 - Jogadores e Filtros
 
 - [x] Remoção completa do conceito "variação"
   - Removido campo `variacaoPct` do schema Prisma
@@ -462,10 +462,10 @@ npx prisma studio
 
 ## Segurança
 
-- ✅ Senhas hash com bcryptjs (10 salt rounds)
-- ✅ JWT tokens com assinatura criptográfica
-- ✅ Proteção de rotas por middleware
-- ✅ httpOnly cookies para melhor segurança de token
+-  Senhas hash com bcryptjs (10 salt rounds)
+-  JWT tokens com assinatura criptográfica
+-  Proteção de rotas por middleware
+-  httpOnly cookies para melhor segurança de token
 - ⚠️ **TODO**: Usar `JWT_SECRET` robusto em produção
 - ⚠️ **TODO**: Implementar CORS restritivo
 - ⚠️ **TODO**: Rate limiting em endpoints de auth

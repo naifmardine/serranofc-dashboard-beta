@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ConfirmDeleteDialog from "@/components/Atoms/ConfirmDeleteDialog";
+import ImportTransferenciasCsvButton from "@/components/Atoms/ImportTransferenciasCSVButton";
+import { Trash2 } from "lucide-react";
 
 type Row = {
   id: string;
@@ -12,7 +15,7 @@ type Row = {
   clubeDestino: string | null;
   paisClubeDestino: string | null;
   dataTransferencia: string | null;
-  valor: string | null;
+  valor: any; // Decimal pode vir como string/obj; formatador lida
 };
 
 function fmtDate(v: string | null) {
@@ -22,10 +25,13 @@ function fmtDate(v: string | null) {
   return d.toLocaleDateString("pt-BR");
 }
 
-function fmtMoney(v: string | null) {
-  if (!v) return "—";
-  const n = Number(v);
-  if (Number.isNaN(n)) return v;
+function fmtMoney(v: any) {
+  if (v == null) return "—";
+  // Prisma Decimal às vezes vem como { toString() } ou string
+  const s = typeof v === "string" ? v : typeof v?.toString === "function" ? v.toString() : String(v);
+  if (!s) return "—";
+  const n = Number(s);
+  if (Number.isNaN(n)) return s;
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "EUR",
@@ -43,6 +49,24 @@ export default function TransferenciasTable() {
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [rows, setRows] = useState<Row[]>([]);
+  const [tick, setTick] = useState(0); // força refetch
+
+  // seleção (apenas página atual)
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const selectedIds = useMemo(
+    () => Object.entries(selected).filter(([, v]) => v).map(([k]) => k),
+    [selected],
+  );
+
+  const allOnPageSelected = useMemo(() => {
+    if (rows.length === 0) return false;
+    return rows.every((r) => selected[r.id]);
+  }, [rows, selected]);
+
+  const someOnPageSelected = useMemo(() => {
+    if (rows.length === 0) return false;
+    return rows.some((r) => selected[r.id]);
+  }, [rows, selected]);
 
   const query = useMemo(() => {
     const sp = new URLSearchParams();
@@ -53,6 +77,10 @@ export default function TransferenciasTable() {
     if (pais) sp.set("pais", pais);
     return sp.toString();
   }, [page, pageSize, q, pos, pais]);
+
+  function refetch() {
+    setTick((t) => t + 1);
+  }
 
   useEffect(() => {
     let alive = true;
@@ -81,7 +109,7 @@ export default function TransferenciasTable() {
     return () => {
       alive = false;
     };
-  }, [query]);
+  }, [query, tick]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -89,10 +117,63 @@ export default function TransferenciasTable() {
     setPage(1);
   }, [q, pos, pais, pageSize]);
 
+  // limpa seleção quando mudar página/filtros (pra não deletar sem querer)
+  useEffect(() => {
+    setSelected({});
+  }, [query]);
+
+  // delete dialog
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const expectedPhrase = useMemo(() => {
+    return `DELETAR ${selectedIds.length} TRANSFERENCIAS`;
+  }, [selectedIds.length]);
+
+  async function deleteSelected() {
+    const ids = selectedIds;
+    if (ids.length === 0) return;
+
+    const r = await fetch("/api/transferencias", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
+
+    const data = await r.json();
+    if (!r.ok) throw new Error(data?.error ?? "Erro ao deletar.");
+
+    setDeleteOpen(false);
+    setSelected({});
+    refetch();
+  }
+
+  function toggleAllOnPage() {
+    if (rows.length === 0) return;
+    const next = { ...selected };
+
+    if (allOnPageSelected) {
+      // desmarca todos da página
+      for (const r of rows) delete next[r.id];
+    } else {
+      // marca todos da página
+      for (const r of rows) next[r.id] = true;
+    }
+    setSelected(next);
+  }
+
+  function toggleOne(id: string) {
+    setSelected((prev) => {
+      const next = { ...prev };
+      if (next[id]) delete next[id];
+      else next[id] = true;
+      return next;
+    });
+  }
+
   return (
     <div className="rounded-xl border bg-card shadow-sm">
-      {/* filtros */}
-      <div className="p-4 border-b flex flex-wrap gap-2">
+      {/* toolbar / filtros */}
+      <div className="p-4 border-b flex flex-wrap gap-2 items-center">
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -122,24 +203,52 @@ export default function TransferenciasTable() {
           className="h-10 w-[180px] rounded-lg border px-3 hidden md:block"
         />
 
-        <div className="ml-auto flex items-center gap-3">
-          {error ? (
-            <span className="text-sm text-red-500">{error}</span>
-          ) : (
-            <span className="text-sm text-muted-foreground">
-              {loading ? "Carregando..." : `${total} registros`}
-            </span>
-          )}
+        <div className="ml-auto flex items-center gap-2">
+          {/* Import */}
+          <ImportTransferenciasCsvButton
+            onImported={() => {
+              // volta pra primeira página e recarrega
+              setPage(1);
+              refetch();
+            }}
+          />
 
-          <select
-            value={pageSize}
-            onChange={(e) => setPageSize(Number(e.target.value))}
-            className="h-10 rounded-lg border px-2"
+          {/* Delete batch */}
+          <button
+            disabled={selectedIds.length === 0}
+            onClick={() => setDeleteOpen(true)}
+            className="inline-flex items-center gap-2 h-10 px-4 rounded-lg border bg-background hover:bg-muted/40 disabled:opacity-50"
+            title={
+              selectedIds.length === 0
+                ? "Selecione pelo menos 1 linha"
+                : `Deletar ${selectedIds.length} selecionadas`
+            }
           >
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
+            <Trash2 className="w-4 h-4" />
+            Deletar
+            {selectedIds.length > 0 ? ` (${selectedIds.length})` : ""}
+          </button>
+
+          {/* status / page size */}
+          <div className="flex items-center gap-3 pl-2">
+            {error ? (
+              <span className="text-sm text-red-500">{error}</span>
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {loading ? "Carregando..." : `${total} registros`}
+              </span>
+            )}
+
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="h-10 rounded-lg border px-2"
+            >
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -148,6 +257,19 @@ export default function TransferenciasTable() {
         <table className="w-full text-sm">
           <thead className="bg-muted/40">
             <tr>
+              <th className="p-3 w-11">
+                <input
+                  type="checkbox"
+                  checked={allOnPageSelected}
+                  ref={(el) => {
+                    if (!el) return;
+                    el.indeterminate = !allOnPageSelected && someOnPageSelected;
+                  }}
+                  onChange={toggleAllOnPage}
+                  aria-label="Selecionar todos da página"
+                  className="h-4 w-4"
+                />
+              </th>
               <th className="p-3 text-left">Atleta</th>
               <th className="p-3">Idade</th>
               <th className="p-3">Posição</th>
@@ -158,37 +280,37 @@ export default function TransferenciasTable() {
               <th className="p-3 text-right">Valor</th>
             </tr>
           </thead>
+
           <tbody>
             {loading ? (
               <tr>
-                <td
-                  colSpan={8}
-                  className="p-6 text-center text-muted-foreground"
-                >
+                <td colSpan={9} className="p-6 text-center text-muted-foreground">
                   Carregando...
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td
-                  colSpan={8}
-                  className="p-6 text-center text-muted-foreground"
-                >
+                <td colSpan={9} className="p-6 text-center text-muted-foreground">
                   Nenhum resultado.
                 </td>
               </tr>
             ) : (
               rows.map((r) => (
                 <tr key={r.id} className="border-t hover:bg-muted/30">
+                  <td className="p-3">
+                    <input
+                      type="checkbox"
+                      checked={!!selected[r.id]}
+                      onChange={() => toggleOne(r.id)}
+                      aria-label={`Selecionar ${r.atletaNome}`}
+                      className="h-4 w-4"
+                    />
+                  </td>
                   <td className="p-3 font-medium">{r.atletaNome}</td>
-                  <td className="p-3">{r.atletaIdade ?? "—"}</td>
-                  <td className="p-3">{r.atletaPosicao ?? "—"}</td>
-                  <td className="p-3 hidden lg:table-cell">
-                    {r.clubeFormador ?? "—"}
-                  </td>
-                  <td className="p-3 hidden xl:table-cell">
-                    {r.clubeOrigem ?? "—"}
-                  </td>
+                  <td className="p-3 text-center">{r.atletaIdade ?? "—"}</td>
+                  <td className="p-3 text-center">{r.atletaPosicao ?? "—"}</td>
+                  <td className="p-3 hidden lg:table-cell">{r.clubeFormador ?? "—"}</td>
+                  <td className="p-3 hidden xl:table-cell">{r.clubeOrigem ?? "—"}</td>
                   <td className="p-3">
                     <div className="flex flex-col">
                       <span>{r.clubeDestino ?? "—"}</span>
@@ -197,10 +319,8 @@ export default function TransferenciasTable() {
                       </span>
                     </div>
                   </td>
-                  <td className="p-3">{fmtDate(r.dataTransferencia)}</td>
-                  <td className="p-3 text-right tabular-nums">
-                    {fmtMoney(r.valor)}
-                  </td>
+                  <td className="p-3 text-center">{fmtDate(r.dataTransferencia)}</td>
+                  <td className="p-3 text-right tabular-nums">{fmtMoney(r.valor)}</td>
                 </tr>
               ))
             )}
@@ -230,6 +350,17 @@ export default function TransferenciasTable() {
           Próxima
         </button>
       </div>
+
+      {/* confirm delete */}
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        title="Deletar transferências selecionadas"
+        description="Essa ação é irreversível. Você vai deletar os registros selecionados desta página."
+        expectedPhrase={expectedPhrase}
+        itemName={`${selectedIds.length} selecionadas`}
+        onCancel={() => setDeleteOpen(false)}
+        onConfirm={deleteSelected}
+      />
     </div>
   );
 }

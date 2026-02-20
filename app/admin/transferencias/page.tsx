@@ -1,16 +1,24 @@
+import PageTitle from "@/components/Atoms/PageTitle";
 import TransferenciasTable from "@/components/TransferenciasTable";
 
 export default function AdminTransferenciasPage() {
+  const headerActions = (
+    <div className="hidden text-xs text-slate-500 md:block">
+      Dica: use o checkbox do topo para selecionar toda a página.
+    </div>
+  );
+
   return (
-    <div className="p-6 max-w-[1400px] mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Transferências</h1>
-        <p className="text-sm text-muted-foreground">
-          Base de mercado (histórico) — busca, filtros e paginação.
-        </p>
-      </div>
+    <section className="mx-auto w-full max-w-[1400px] bg-gray-50 p-6">
+      <PageTitle
+        base="Admin"
+        title="Transferências"
+        subtitle="Base de mercado (histórico) — importação, filtros, paginação e deleção em lote."
+        actions={headerActions}
+        className="mb-6"
+      />
 
       <TransferenciasTable />
-    </div>
+    </section>
   );
 }

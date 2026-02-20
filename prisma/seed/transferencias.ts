@@ -128,7 +128,7 @@ export async function seedTransferencias() {
     return -1;
   };
 
-  // ✅ AGORA COM "transf" (do seu arquivo)
+  //  AGORA COM "transf" (do seu arquivo)
   const idx = {
     quantidade: col(["quantidade"]),
     nome: col(["nome", "atleta", "jogador"]),
@@ -235,5 +235,5 @@ export async function seedTransferencias() {
     });
   }
 
-  console.log(`✅ Seed transferências: ${batch.length} registros importados.`);
+  console.log(` Seed transferências: ${batch.length} registros importados.`);
 }

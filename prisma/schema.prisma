@@ -110,6 +110,7 @@ model Transferencia {
   moeda               String?
   fonte               String?
   criadoEm            DateTime  @default(now())
+  dedupeKey           String?    @unique
 
   @@index([atletaNome])
   @@index([atletaPosicao])

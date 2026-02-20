@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import ClubesClient from "./ui/clubes-client";
+import ClubesClient from "../../../components/Atoms/clubes-client";
 
 export default async function ClubesPage() {
   const clubs = await prisma.club.findMany({

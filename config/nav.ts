@@ -8,9 +8,7 @@ import {
   Shield,
   Banknote,
   UserCircle2,
-  Share2,
   Download,
-  Settings,
   IdCard,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -28,36 +26,92 @@ export interface NavGroup {
   items: NavItem[];
 }
 
+/**
+ * Roles (centralizado) — reduz risco de typo e mantém compat com Prisma Role.
+ * Se seu enum tiver mais roles no futuro, você adiciona aqui.
+ */
+const R = {
+  ADMIN: "ADMIN" as Role,
+  CLIENT: "CLIENT" as Role,
+} as const;
+
+// Padrões de permissão
+const ROLES_BOTH: Role[] = [R.CLIENT, R.ADMIN];
+const ROLES_ADMIN_ONLY: Role[] = [R.ADMIN];
+
+function item(to: string, label: string, icon: LucideIcon, roles: Role[]): NavItem {
+  return { to, label, icon, roles };
+}
+
+function group(label: string, items: NavItem[]): NavGroup {
+  return { label, items };
+}
+
+/**
+ * Guardrails em DEV: pega bugs cedo sem afetar prod.
+ * - to duplicado
+ * - path sem "/" no começo
+ * - item admin fora de ADMIN (opcional, mas útil)
+ */
+function devValidateNav(groups: NavGroup[]) {
+  if (process.env.NODE_ENV === "production") return;
+
+  const seen = new Set<string>();
+  const problems: string[] = [];
+
+  for (const g of groups) {
+    for (const it of g.items) {
+      if (!it.to.startsWith("/")) {
+        problems.push(`NavItem.to inválido (precisa começar com "/"): "${it.to}"`);
+      }
+      if (seen.has(it.to)) {
+        problems.push(`NavItem.to duplicado: "${it.to}"`);
+      }
+      seen.add(it.to);
+
+      // Guardrail opcional: qualquer rota /admin deve ser ADMIN-only
+      if (it.to === "/admin" || it.to.startsWith("/admin/")) {
+        const isAdminOnly = it.roles.length === 1 && it.roles[0] === R.ADMIN;
+        if (!isAdminOnly) {
+          problems.push(`Rota admin não está ADMIN-only: "${it.to}" roles=${JSON.stringify(it.roles)}`);
+        }
+      }
+
+      // Guardrail: roles vazias
+      if (!it.roles || it.roles.length === 0) {
+        problems.push(`NavItem.roles vazio em "${it.to}"`);
+      }
+    }
+  }
+
+  if (problems.length) {
+    // Não quebra build, mas deixa explícito no console.
+    // Se você preferir "fail fast", troque por throw new Error(...)
+    console.warn("[navConfig] Problemas detectados:\n- " + problems.join("\n- "));
+  }
+}
+
 export const navGroups: NavGroup[] = [
-  {
-    label: "Principal",
-    items: [
-      { to: "/perfil", label: "Perfil", icon: IdCard, roles: ["CLIENT", "ADMIN"] },
-      { to: "/dashboard", label: "Dashboard", icon: Home, roles: ["CLIENT", "ADMIN"] },
-      { to: "/jogadores", label: "Jogadores", icon: Users, roles: ["CLIENT", "ADMIN"] },
-      { to: "/relatorios", label: "Relatórios", icon: FileBarChart, roles: ["CLIENT", "ADMIN"] },
-    ],
-  },
-  {
-    label: "Análise",
-    items: [
-      { to: "/serrano-ai", label: "Serrano.AI", icon: Brain, roles: ["ADMIN"] },
-      { to: "/mercado", label: "Mercado", icon: LineChart, roles: ["ADMIN"] },
-      { to: "/projecoes", label: "Projeções", icon: ClipboardList, roles: ["ADMIN"] },
-    ],
-  },
-  {
-    label: "Admin",
-    items: [
-      { to: "/admin/jogadores", label: "Alterar Jogadores", icon: Users, roles: ["ADMIN"] },
-      { to: "/admin/clubes", label: "Clubes", icon: Shield, roles: ["ADMIN"] },
-      { to: "/admin/transferencias", label: "Transferências", icon: Banknote, roles: ["ADMIN"] },
+  group("Principal", [
+    item("/perfil", "Perfil", IdCard, ROLES_BOTH),
+    item("/dashboard", "Dashboard", Home, ROLES_BOTH),
+    item("/jogadores", "Jogadores", Users, ROLES_BOTH),
+    item("/relatorios", "Relatórios", FileBarChart, ROLES_BOTH),
+  ]),
 
-      { to: "/admin/usuarios", label: "Usuários", icon: UserCircle2, roles: ["ADMIN"] },
+  group("Análise", [
+    item("/admin/serrano-ai", "Serrano.AI", Brain, ROLES_ADMIN_ONLY),
+    item("/admin/mercado", "Mercado", LineChart, ROLES_ADMIN_ONLY),
+    item("/admin/projecoes", "Projeções", ClipboardList, ROLES_ADMIN_ONLY),
+  ]),
 
-      { to: "/compartilhar", label: "Compartilhar", icon: Share2, roles: ["ADMIN"] },
-      { to: "/exportar", label: "Exportar", icon: Download, roles: ["ADMIN"] },
-      { to: "/config", label: "Configurações", icon: Settings, roles: ["ADMIN"] },
-    ],
-  },
+  group("Admin", [
+    item("/admin/jogadores", "Alterar Jogadores", Users, ROLES_ADMIN_ONLY),
+    item("/admin/clubes", "Clubes", Shield, ROLES_ADMIN_ONLY),
+    item("/admin/transferencias", "Transferências", Banknote, ROLES_ADMIN_ONLY),
+    item("/admin/usuarios", "Usuários", UserCircle2, ROLES_ADMIN_ONLY),
+  ]),
 ];
+
+// roda validação em dev sem mudar API/export
+devValidateNav(navGroups);

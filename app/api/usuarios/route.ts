@@ -5,29 +5,44 @@ import { hash } from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_in_prod";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-function extractToken(authHeader?: string | null): string | null {
+const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_in_prod";
+const COOKIE_NAME = "sfc_token";
+
+type Decoded = { sub: string; role: "ADMIN" | "CLIENT" };
+
+function extractBearerToken(authHeader?: string | null): string | null {
   if (!authHeader) return null;
   const match = /^Bearer\s+(.+)$/i.exec(authHeader.trim());
-  return match?.[1] || null;
+  return match?.[1] ?? null;
 }
 
-function verifyToken(token: string): { sub: string; role: string } | null {
+function getTokenFromReq(req: NextRequest): string | null {
+  // 1) Authorization: Bearer ...
+  const bearer = extractBearerToken(req.headers.get("authorization"));
+  if (bearer) return bearer;
+
+  // 2) Cookie raw
+  return req.cookies.get(COOKIE_NAME)?.value ?? null;
+}
+
+function verifyToken(token: string): Decoded | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { sub: string; role: string };
+    const payload = jwt.verify(token, JWT_SECRET) as any;
+    const sub = typeof payload?.sub === "string" ? payload.sub : null;
+    const role = payload?.role === "ADMIN" || payload?.role === "CLIENT" ? payload.role : null;
+    if (!sub || !role) return null;
+    return { sub, role };
   } catch {
     return null;
   }
 }
 
-function getAuth(req: NextRequest) {
-  const token = extractToken(
-    req.headers.get("authorization") || req.cookies.get("sfc_token")?.value
-  );
-
+function getAuth(req: NextRequest): { token: string | null; decoded: Decoded | null } {
+  const token = getTokenFromReq(req);
   if (!token) return { token: null, decoded: null };
-
   const decoded = verifyToken(token);
   return { token, decoded };
 }
@@ -94,8 +109,7 @@ export async function POST(req: NextRequest) {
 
     const name = parsed.data.name.trim();
     const email = parsed.data.email.trim().toLowerCase();
-    const password = parsed.data.password;
-    const role = parsed.data.role;
+    const {password, role} = parsed.data;
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -134,7 +148,7 @@ export async function PUT(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
 
     const schema = z.object({
-      id: z.string().optional(),
+      id: z.string().optional(), // compat; preferir ignorar no backend
       name: z.string().min(1).optional(),
       email: z.string().email().optional(),
     });
@@ -157,7 +171,6 @@ export async function PUT(req: NextRequest) {
     if (parsed.data.email !== undefined) {
       const nextEmail = parsed.data.email.trim().toLowerCase();
 
-      // evita conflito com outro usuário
       const existing = await prisma.user.findUnique({ where: { email: nextEmail } });
       if (existing && existing.id !== targetUserId) {
         return NextResponse.json({ error: "Email já registrado" }, { status: 400 });

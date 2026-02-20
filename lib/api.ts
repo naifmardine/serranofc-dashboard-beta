@@ -2,6 +2,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ""; // vazio = mesma origem
 
 type ApiInit = RequestInit & { auth?: boolean };
 
+/**
+ * Cookie-first:
+ * - SEM Authorization automático
+ * - SEM localStorage
+ * - SEM sync-token
+ * - usa cookie httpOnly via credentials:"same-origin"
+ */
 export async function apiFetch(path: string, init: ApiInit = {}) {
   const { auth = true, ...rest } = init;
 
@@ -10,17 +17,11 @@ export async function apiFetch(path: string, init: ApiInit = {}) {
     headers.set("Content-Type", "application/json");
   }
 
-  // Se você continuar usando token no header, ok
-  if (auth && typeof window !== "undefined") {
-    const token = window.localStorage.getItem("sfc_token");
-    if (token) headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  // ✅ IMPORTANTE: não omitir credentials — usa "same-origin" (envia cookie pro mesmo host)
   const res = await fetch(API_URL + path, {
     ...rest,
     headers,
-    credentials: "same-origin",
+    credentials: auth ? "same-origin" : "omit",
+    cache: "no-store",
   });
 
   if (!res.ok) {
@@ -28,5 +29,10 @@ export async function apiFetch(path: string, init: ApiInit = {}) {
     throw new Error(`HTTP ${res.status}: ${text}`);
   }
 
-  return res.json();
+  const ct = res.headers.get("content-type") || "";
+  if (ct.includes("application/json")) {
+    return res.json();
+  }
+
+  return res.text();
 }

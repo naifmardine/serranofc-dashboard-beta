@@ -27,6 +27,9 @@ type Props = {
  * - calcula size efetivo (layout.sizes > defaultSize)
  * - aplica colSpan em lg (12 col)
  * - garante min-w-0 (Recharts precisa)
+ *
+ * Export PDF:
+ * - marca cada card como "bloco" para evitar quebra no meio (data-pdf-block)
  */
 export function DashboardGrid({
   widgets,
@@ -34,8 +37,8 @@ export function DashboardGrid({
   layout,
   onChangeLayout,
 }: Props) {
-  // evita crash "Cannot read properties of undefined (reading 'sizes')"
   const sizes = layout?.sizes ?? {};
+
   const fallbackLayout =
     layout ??
     ({
@@ -68,11 +71,13 @@ export function DashboardGrid({
         return (
           <div
             key={widget.id}
+            // ✅ isso aqui é o “bloco” que o export usa pra não cortar no meio
+            data-pdf-block="true"
             className={[
               "col-span-1",
               "sm:col-span-2",
               lgColSpanClass(effectiveSize),
-              "min-w-0", // ✅ Recharts: evita width = -1 em flex/grid
+              "min-w-0", // Recharts: evita width = -1 em flex/grid
             ].join(" ")}
           >
             <WidgetCard

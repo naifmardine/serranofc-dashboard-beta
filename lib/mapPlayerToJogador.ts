@@ -23,7 +23,7 @@ export function mapPlayerToJogador(p: Player, club?: ClubLite): Jogador {
     nome: p.nome,
     idade: p.idade,
 
-    // ✅ clube vindo por lookup
+    //  clube vindo por lookup
     clubeId: p.clubeId ?? null,
     clubeNome: club?.nome ?? null,
     clubeRef: club

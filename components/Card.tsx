@@ -1,3 +1,5 @@
+"use client";
+
 import type { Jogador } from "../type/jogador";
 import Link from "next/link";
 
@@ -17,6 +19,13 @@ const fmtEUR = (mi: number) =>
     maximumFractionDigits: 1,
   }) +
   "M";
+
+function calcAgeFromYear(year?: number | null) {
+  if (!year || !Number.isFinite(year)) return null;
+  const now = new Date();
+  const age = now.getFullYear() - year;
+  return age < 0 ? 0 : age;
+}
 
 function PosicaoLabel({ p }: { p: Jogador["posicao"] }) {
   const map: Record<Jogador["posicao"], string> = {
@@ -48,35 +57,49 @@ function Initials({ name }: { name: string }) {
 type Props = { player: Jogador; onClick?: (id: string) => void };
 
 export default function Card({ player, onClick }: Props) {
-  // ✅ regra do valor
   const temValor = Number(player.valorMercado) > 0;
 
-  // ✅ posse sempre vem dela (se existir), independente do valor
-  const hasPosse = typeof player.possePct === "number" && Number.isFinite(player.possePct);
+  const hasPosse =
+    typeof player.possePct === "number" && Number.isFinite(player.possePct);
   const possePct = hasPosse ? (player.possePct as number) : 0;
-
-  // ✅ fill sempre condizente com % serrano (quando tiver)
   const widthPct = hasPosse ? Math.max(0, Math.min(100, possePct)) : 0;
-
-  // ✅ label sempre aparece; se não tiver posse, vira —
-  const posseLabel = hasPosse ? `${possePct.toFixed(1).replace(".", ",")}%` : "—";
+  const posseLabel = hasPosse
+    ? `${possePct.toFixed(1).replace(".", ",")}%`
+    : "—";
 
   const representacao =
     (player as any).representacao ?? (player as any)["representação"] ?? "";
 
   const isDomDireito = player.peDominante === "D";
+
   const leftFootSrc = isDomDireito
     ? getFootSrc("esquerdo") || FALLBACK_SEC
     : getFootSrc("esquerdo_dominante") || FALLBACK_DOM;
+
   const rightFootSrc = isDomDireito
     ? getFootSrc("direito_dominante") || FALLBACK_DOM
     : getFootSrc("direito") || FALLBACK_SEC;
 
-  // ✅ cores dependem SOMENTE do valor (verde) vs sem valor (cinza)
+  const footPrimaryClass = "block w-[22px] h-[22px] scale-105 opacity-100";
+  const footSecondaryClass = "block w-4 h-4 scale-[.92] opacity-90";
+
+  const leftFootClass = isDomDireito ? footSecondaryClass : footPrimaryClass;
+  const rightFootClass = isDomDireito ? footPrimaryClass : footSecondaryClass;
+
   const trackClass = temValor ? "bg-green-100" : "bg-gray-100";
   const fillClass = temValor ? "bg-green-500" : "bg-gray-400";
   const pctTextClass = temValor ? "text-green-600" : "text-gray-400";
-  const valueTextClass = "text-green-700"; // só aparece quando temValor
+  const valueTextClass = "text-green-700";
+
+  const anoNascimentoRaw = (player as any).anoNascimento;
+  const anoNascimento =
+    typeof anoNascimentoRaw === "number" && Number.isFinite(anoNascimentoRaw)
+      ? anoNascimentoRaw
+      : null;
+
+  const idadeCalc = calcAgeFromYear(anoNascimento);
+  const idadeExibida =
+    idadeCalc ?? (typeof player.idade === "number" ? player.idade : null);
 
   return (
     <Link
@@ -86,16 +109,16 @@ export default function Card({ player, onClick }: Props) {
       onClick={() => onClick?.(player.id)}
     >
       <article
-        className="bg-white border border-gray-200 rounded-2xl px-[18px] py-5 min-h-80 
+        data-pdf-block="true"
+        className="bg-white border border-gray-200 rounded-2xl px-[18px] py-5 min-h-80
                    flex flex-col gap-3 transition-all duration-150 ease-in-out
                    hover:shadow-[0_16px_38px_rgba(0,0,0,0.08)] hover:border-[#d5d9e5] hover:scale-105
                    active:translate-y-px
                    group-focus-visible:outline group-focus-visible:outline-[#F2CD00] group-focus-visible:outline-offset-2 group-focus-visible:rounded-[14px]"
         role="article"
       >
-        {/* Avatar */}
         <div
-          className="w-28 h-28 my-1 mb-1.5 mx-auto rounded-full overflow-hidden 
+          className="w-28 h-28 my-1 mb-1.5 mx-auto rounded-full overflow-hidden
                      grid place-items-center bg-linear-to-br from-[#eef2ff] to-white border border-[#dfe3f0]"
         >
           {player.imagemUrl ? (
@@ -110,7 +133,6 @@ export default function Card({ player, onClick }: Props) {
           )}
         </div>
 
-        {/* Nome + pés */}
         <div className="flex items-center justify-between gap-3">
           <h3
             className="m-0 text-xl font-extrabold text-slate-900 whitespace-nowrap overflow-hidden text-ellipsis flex-auto min-w-0"
@@ -118,41 +140,48 @@ export default function Card({ player, onClick }: Props) {
           >
             {player.nome}
           </h3>
+
           <div
             className="inline-flex items-center gap-0.5 flex-none"
             title={`Pé dominante: ${player.peDominante}`}
           >
             <img
               src={leftFootSrc}
-              className={`block w-4 h-4 opacity-90 scale-[.92] ${
-                isDomDireito ? "" : "w-[22px] h-[22px] scale-105 opacity-100"
-              }`}
+              className={leftFootClass}
               alt=""
               aria-hidden
             />
             <img
               src={rightFootSrc}
-              className={`block w-[22px] h-[22px] scale-105 ${
-                isDomDireito ? "" : "w-4 h-4 opacity-90 scale-[.92]"
-              }`}
+              className={rightFootClass}
               alt=""
               aria-hidden
             />
           </div>
         </div>
 
-        {/* Posição */}
         <div className="flex justify-center">
           <span className="font-bold text-[#222a3a] text-sm">
             <PosicaoLabel p={player.posicao} />
           </span>
         </div>
 
-        {/* Idade / Valor */}
-        <div className="flex items-center justify-between">
-          <span className="text-gray-500 text-[13px]">Idade: {player.idade}</span>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-gray-500 text-[13px] whitespace-nowrap">
+              Idade: {idadeExibida ?? "—"}
+            </span>
 
-          {/* ✅ valor some se for 0 */}
+            {anoNascimento && (
+              <>
+                <span className="text-gray-300 text-[12px]">•</span>
+                <span className="text-gray-500 text-[13px] whitespace-nowrap">
+                  {anoNascimento}
+                </span>
+              </>
+            )}
+          </div>
+
           {temValor ? (
             <span
               className={`inline-flex items-baseline gap-1.5 font-extrabold text-sm leading-none whitespace-nowrap ${valueTextClass}`}
@@ -164,13 +193,11 @@ export default function Card({ player, onClick }: Props) {
           )}
         </div>
 
-        {/* Barra de Posse Serrano (sempre condizente com % serrano) */}
         <div className="flex items-center justify-center gap-2.5">
           <div
             className={`relative w-[89%] max-xl:w-[78%] h-3 rounded-full ${trackClass} overflow-hidden`}
             aria-hidden
           >
-            {/* ✅ fill sempre segue a % (se tiver posse). Se não tiver posse, width=0 e não aparece */}
             {hasPosse && (
               <span
                 className={`absolute inset-0 right-auto ${fillClass} rounded-full`}
@@ -179,13 +206,13 @@ export default function Card({ player, onClick }: Props) {
             )}
           </div>
 
-          {/* ✅ % sempre aparece (verde quando tem valor, cinza quando não tem) */}
-          <span className={`font-extrabold text-[12.5px] tracking-[.2px] ${pctTextClass}`}>
+          <span
+            className={`font-extrabold text-[12.5px] tracking-[.2px] ${pctTextClass}`}
+          >
             {posseLabel}
           </span>
         </div>
 
-        {/* Clube / Agente */}
         <div className="mt-auto flex items-center justify-between gap-3.5">
           <span
             className="

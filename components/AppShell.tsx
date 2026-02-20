@@ -1,26 +1,27 @@
-// components/AppShell.tsx
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "@/components/Atoms/Sidebar";
-import { useTokenSync } from "@/hooks/useTokenSync";
+import { useAuth } from "../app/auth/AuthContext";
 
-export default function AppShell({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  
-  // Sincroniza token do localStorage para cookie
-  useTokenSync();
+  const router = useRouter();
+  const { user, loading } = useAuth();
 
-  // rotas sem sidebar
-  const hideSidebar = pathname === "/login";
+  const isLogin = pathname === "/login";
 
-  if (hideSidebar) {
-    return <>{children}</>;
-  }
+  useEffect(() => {
+    if (loading) return;
+    if (!user && !isLogin) {
+      router.replace("/login");
+      router.refresh();
+    }
+  }, [loading, user, isLogin, router]);
+
+  if (loading) return <>{children}</>;
+  if (isLogin || !user) return <>{children}</>;
 
   return (
     <div className="flex">

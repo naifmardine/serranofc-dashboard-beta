@@ -12,18 +12,17 @@ import { WidgetDefinition } from "@/type/dashboard";
  */
 
 export const WIDGETS: WidgetDefinition[] = [
-
-    /* ======================================================
+  /* ======================================================
    * OVERVIEW / GEO MAP
    * ====================================================== */
   {
     id: "overview.geo_map",
     title: "Mapa (mundo → Brasil)",
     description: "Jogadores por país e, ao clicar no Brasil, por estado (UF).",
-    group: "overview",
+    group: "serrano",
     scope: "both",
     defaultEnabled: true,
-    defaultSize: "lg", // ✅ fixado em LG por default
+    defaultSize: "lg", //  fixado em LG por default
     keywords: ["mapa", "mundo", "brasil", "país", "estado", "geografia"],
   },
   /* ======================================================
@@ -114,17 +113,6 @@ export const WIDGETS: WidgetDefinition[] = [
     keywords: ["valor", "ranking", "jogadores"],
   },
   {
-    id: "serrano.value_over_time",
-    title: "Evolução do valor do elenco",
-    description:
-      "Valor agregado do elenco ao longo do tempo (snapshots).",
-    group: "serrano",
-    scope: "serrano",
-    defaultEnabled: false,
-    defaultSize: "lg",
-    keywords: ["histórico", "valor", "tempo"],
-  },
-  {
     id: "serrano.age_vs_value_scatter",
     title: "Idade vs valor de mercado",
     description: "Relação entre idade e valor dos jogadores.",
@@ -143,6 +131,26 @@ export const WIDGETS: WidgetDefinition[] = [
     defaultEnabled: false,
     defaultSize: "md",
     keywords: ["agência", "representação"],
+  },
+  {
+    id: "serrano.rights_distribution",
+    title: "Pipeline de Direitos do Serrano",
+    description: "Distribuição percentual dos direitos econômicos do clube.",
+    group: "serrano",
+    scope: "serrano",
+    defaultEnabled: false,
+    defaultSize: "md",
+    keywords: ["direitos", "percentual", "financeiro"],
+  },
+  {
+    id: "serrano.age_by_position",
+    title: "Idade por posição",
+    description: "Distribuição de faixas etárias dentro de cada posição.",
+    group: "serrano",
+    scope: "serrano",
+    defaultEnabled: false,
+    defaultSize: "lg",
+    keywords: ["idade", "posição", "matriz"],
   },
 
   /* ======================================================
@@ -225,8 +233,7 @@ export const WIDGETS: WidgetDefinition[] = [
   {
     id: "compare.position_share_serrano_vs_market",
     title: "Posições: Serrano vs Mercado",
-    description:
-      "Comparação percentual de posições entre elenco e mercado.",
+    description: "Comparação percentual de posições entre elenco e mercado.",
     group: "compare",
     scope: "both",
     defaultEnabled: false,
@@ -236,8 +243,7 @@ export const WIDGETS: WidgetDefinition[] = [
   {
     id: "compare.avg_age_by_position",
     title: "Idade média por posição",
-    description:
-      "Comparação da idade média por posição (Serrano vs mercado).",
+    description: "Comparação da idade média por posição (Serrano vs mercado).",
     group: "compare",
     scope: "both",
     defaultEnabled: false,

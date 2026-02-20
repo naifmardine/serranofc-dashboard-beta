@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { compare } from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_in_prod";
 const JWT_EXPIRES_IN = "7d";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 dias
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
@@ -19,14 +21,14 @@ function signToken(userId: string, role: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    //  lazy import: só carrega Prisma quando realmente entrar no handler
+    const { prisma } = await import("@/lib/prisma");
+
     const body = await req.json().catch(() => ({}));
     const parsed = loginSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Email e senha obrigatórios" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Email e senha obrigatórios" }, { status: 400 });
     }
 
     const { email, password } = parsed.data;
@@ -57,7 +59,7 @@ export async function POST(req: NextRequest) {
     const token = signToken(user.id, user.role);
 
     const res = NextResponse.json({
-      token, // opcional pro client
+      token,
       user: {
         id: user.id,
         name: user.name,
@@ -69,7 +71,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // cookie pro middleware de autenticação
     res.cookies.set("sfc_token", token, {
       httpOnly: true,
       sameSite: "lax",

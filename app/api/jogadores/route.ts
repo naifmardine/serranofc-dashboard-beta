@@ -57,7 +57,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ clube via ID
+    //  clube via ID
     const clubeId = body?.clubeId ? String(body.clubeId) : null;
 
     // valida clubeId (se enviado) e já pega nome+logo
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
       altura: body?.altura ?? null,
       imagemUrl: body?.imagemUrl ?? null,
 
-      // ✅ único campo de clube
+      //  único campo de clube
       clubeId,
 
       // estruturas

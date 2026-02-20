@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import type { Jogador, SeasonStats } from "@/type/jogador";
-import { ChevronDown, Instagram } from "lucide-react";
+import PageTitle from "@/components/Atoms/PageTitle";
+import { ArrowLeft, ChevronDown, Instagram } from "lucide-react";
 
 /* ========================= CONSTANTES ========================= */
 
@@ -79,18 +80,13 @@ function isPct0to1(p?: number | null) {
 
 /* ========================= HOOK CLICK OUTSIDE ========================= */
 
-function useClickOutside<T extends HTMLElement>(
-  open: boolean,
-  onClose: () => void,
-) {
+function useClickOutside<T extends HTMLElement>(open: boolean, onClose: () => void) {
   const ref = useRef<T | null>(null);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        onClose();
-      }
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -115,14 +111,13 @@ function SeasonSelect({
   const [open, setOpen] = useState(false);
   const ref = useClickOutside<HTMLDivElement>(open, () => setOpen(false));
 
-  const label = (v: SeasonValue) =>
-    v === "todas" ? "Todas as temporadas" : String(v);
+  const label = (v: SeasonValue) => (v === "todas" ? "Todas as temporadas" : String(v));
 
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
-        className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-[10px] text-[13px] text-gray-900 cursor-pointer hover:bg-gray-50"
+        className="inline-flex items-center gap-2 rounded-[10px] border border-gray-200 bg-white px-3 py-2 text-[13px] text-gray-900 hover:bg-gray-50"
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -133,7 +128,7 @@ function SeasonSelect({
 
       {open && (
         <ul
-          className="absolute top-[calc(100%+6px)] left-0 min-w-[220px] bg-white border border-gray-200 rounded-xl shadow z-20 p-1.5"
+          className="absolute left-0 top-[calc(100%+6px)] z-20 min-w-[220px] rounded-xl border border-gray-200 bg-white p-1.5 shadow"
           role="listbox"
         >
           {options.map((opt) => {
@@ -141,9 +136,10 @@ function SeasonSelect({
             return (
               <li
                 key={String(opt)}
-                className={`px-2.5 py-2 rounded-lg cursor-pointer text-[13px] ${
-                  active ? "bg-gray-200 font-bold" : "hover:bg-gray-100"
-                }`}
+                className={[
+                  "cursor-pointer rounded-lg px-2.5 py-2 text-[13px]",
+                  active ? "bg-gray-200 font-bold" : "hover:bg-gray-100",
+                ].join(" ")}
                 onClick={() => {
                   onChange(opt);
                   setOpen(false);
@@ -173,84 +169,94 @@ export default function PlayerDetailPage() {
   useEffect(() => {
     if (!id) return;
 
-    setLoading(true);
-    setError(null);
+    let active = true;
 
-    fetch(`/api/jogadores/${id}`)
-      .then(async (res) => {
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await fetch(`/api/jogadores/${id}`, { cache: "no-store" });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           throw new Error(data.error || `Erro HTTP ${res.status}`);
         }
-        return res.json();
-      })
-      .then((data: { jogador: Jogador }) => {
-        setJogador(data.jogador);
-      })
-      .catch((err) => {
-        setError(err.message);
+
+        const data = (await res.json().catch(() => ({}))) as { jogador?: Jogador } | Jogador;
+        const j = (data as any)?.jogador ?? data;
+
+        if (!active) return;
+        setJogador(j as Jogador);
+      } catch (err: any) {
+        if (!active) return;
         console.error(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+        setError(err?.message || "Erro ao carregar jogador.");
+        setJogador(null);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
-  if (loading)
+  if (loading) {
     return (
-      <section className="p-6 max-w-[1100px] mx-auto">
+      <section className="mx-auto w-full max-w-[1100px] bg-gray-50 p-6">
         <p className="text-sm text-gray-700">Carregando jogador...</p>
       </section>
     );
+  }
 
-  if (error || !jogador)
+  if (error || !jogador) {
     return (
-      <section className="p-6 max-w-[1100px] mx-auto">
-        <h3 className="font-bold text-lg mb-1">Jogador não encontrado</h3>
-        {error && (
-          <p className="text-xs text-red-600 mb-2">Detalhe técnico: {error}</p>
-        )}
-        <Link href="/jogadores" className="underline text-sm text-gray-800">
-          Voltar
-        </Link>
+      <section className="mx-auto w-full max-w-[1100px] bg-gray-50 p-6">
+        <PageTitle
+          base="Principal"
+          title="Jogador"
+          subtitle="Não foi possível carregar o perfil."
+          actions={
+            <Link
+              href="/jogadores"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-gray-50"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </Link>
+          }
+        />
+
+        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error ? `Detalhe técnico: ${error}` : "Jogador não encontrado."}
+        </div>
       </section>
     );
+  }
 
   const fotoUrl = jogador.imagemUrl || null;
   const pe = jogador.peDominante;
   const isDomDireito = pe === "D";
 
-  const leftFootSrc = isDomDireito
-    ? getFootSrc("esquerdo")
-    : getFootSrc("esquerdo_dominante");
-
-  const rightFootSrc = isDomDireito
-    ? getFootSrc("direito_dominante")
-    : getFootSrc("direito");
+  const leftFootSrc = isDomDireito ? getFootSrc("esquerdo") : getFootSrc("esquerdo_dominante");
+  const rightFootSrc = isDomDireito ? getFootSrc("direito_dominante") : getFootSrc("direito");
 
   const statsPorTemporada = jogador.statsPorTemporada || null;
-  const temStats =
-    statsPorTemporada && Object.keys(statsPorTemporada).length > 0;
+  const temStats = !!(statsPorTemporada && Object.keys(statsPorTemporada).length > 0);
 
   let seasonOptions: SeasonValue[] = ["todas"];
   if (temStats && statsPorTemporada) {
-    const keys = Object.keys(statsPorTemporada).sort(
-      (a, b) => Number(b) - Number(a),
-    );
+    const keys = Object.keys(statsPorTemporada).sort((a, b) => Number(b) - Number(a));
     seasonOptions = ["todas", ...keys];
   }
 
   let stats = { gols: 0, assistencias: 0, partidas: 0 };
   if (temStats && statsPorTemporada) {
-    if (season === "todas") {
-      stats = sumStats(statsPorTemporada);
-    } else {
+    if (season === "todas") stats = sumStats(statsPorTemporada);
+    else {
       const s = statsPorTemporada[season] || {};
-      stats = {
-        gols: s.gols ?? 0,
-        assistencias: s.assistencias ?? 0,
-        partidas: s.partidas ?? 0,
-      };
+      stats = { gols: s.gols ?? 0, assistencias: s.assistencias ?? 0, partidas: s.partidas ?? 0 };
     }
   }
 
@@ -263,65 +269,76 @@ export default function PlayerDetailPage() {
   const valorMercadoInteiro = (jogador.valorMercado ?? 0) * 1_000_000;
   const mostrarValorMercado = valorMercadoInteiro > 0;
 
-  const posseRaw =
-    typeof jogador.possePct === "number" ? jogador.possePct : null;
-  const posseFrac =
-    posseRaw == null
-      ? null
-      : isPct0to1(posseRaw)
-        ? posseRaw
-        : clampPct01(posseRaw / 100);
+  const posseRaw = typeof jogador.possePct === "number" ? jogador.possePct : null;
+  const posseFrac = posseRaw == null ? null : isPct0to1(posseRaw) ? posseRaw : clampPct01(posseRaw / 100);
 
-  const valorSerranoInteiro =
-    posseFrac != null ? valorMercadoInteiro * posseFrac : 0;
+  const valorSerranoInteiro = posseFrac != null ? valorMercadoInteiro * posseFrac : 0;
   const mostrarValorSerrano = valorSerranoInteiro > 0;
 
-  const possePctLabel =
-    posseFrac == null ? null : `${(posseFrac * 100).toFixed(1)}%`;
+  const possePctLabel = posseFrac == null ? null : `${(posseFrac * 100).toFixed(1)}%`;
 
   const clubName = jogador.clubeNome ?? jogador.clubeRef?.nome ?? null;
   const clubLogo = jogador.clubeRef?.logoUrl ?? null;
 
+  const pageTitle = "Perfil do jogador";
+
+  const headerActions = (
+    <Link
+      href="/jogadores"
+      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-gray-50"
+      title="Voltar para Jogadores"
+    >
+      <ArrowLeft className="h-4 w-4" />
+      Jogadores
+    </Link>
+  );
+
   return (
-    <section className="px-[22px] pt-[18px] pb-[26px] max-w-[1100px] mx-auto">
-      <header className="grid grid-cols-[1fr_auto] bg-white border border-gray-200 rounded-[14px] p-[18px] mb-3.5 items-center gap-4">
-        <div className="flex items-center gap-4 min-w-0">
-          <div className="w-32 h-32 rounded-full bg-linear-to-br from-[#eef2ff] to-white border border-[#dfe3f0] grid place-items-center overflow-hidden shrink-0">
+    <section className="mx-auto w-full max-w-[1100px] bg-gray-50 px-[22px] pb-[26px] pt-[18px]">
+      <PageTitle
+        base="Principal"
+        title={pageTitle}
+        subtitle="Perfil completo do atleta (dados, valor, posse, estatísticas e mídia)."
+        actions={headerActions}
+        className="mb-4"
+        crumbLabel="Jogadores"
+      />
+
+      <header className="mb-3.5 grid grid-cols-[1fr_auto] items-center gap-4 rounded-[14px] border border-gray-200 bg-white p-[18px]">
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="grid h-32 w-32 shrink-0 place-items-center overflow-hidden rounded-full border border-[#dfe3f0] bg-linear-to-br from-[#eef2ff] to-white">
             {fotoUrl ? (
-              <img
-                src={fotoUrl}
-                alt={jogador.nome}
-                className="w-full h-full object-cover"
-              />
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={fotoUrl} alt={jogador.nome} className="h-full w-full object-cover" />
             ) : (
-              <span className="font-extrabold text-[#003399] text-[30px]">
+              <span className="text-[30px] font-extrabold text-[#003399]">
                 {initials(jogador.nome)}
               </span>
             )}
           </div>
 
-          <div className="flex flex-col gap-2 min-w-0">
-            <h1 className="m-0 text-2xl font-extrabold text-slate-900 whitespace-nowrap overflow-hidden text-ellipsis">
+          <div className="flex min-w-0 flex-col gap-2">
+            <h1 className="m-0 overflow-hidden text-ellipsis whitespace-nowrap text-2xl font-extrabold text-slate-900">
               {jogador.nome}
             </h1>
 
             <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1.5 bg-[#003399] text-white text-xs rounded-full font-extrabold tracking-wide">
+              <span className="rounded-full bg-[#003399] px-3 py-1.5 text-xs font-extrabold tracking-wide text-white">
                 {jogador.posicao}
               </span>
 
-              <span className="px-3 py-1.5 bg-gray-100 border border-gray-200 text-xs rounded-full font-semibold text-gray-900">
+              <span className="rounded-full border border-gray-200 bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-900">
                 Idade: {jogador.idade}
               </span>
 
-              {jogador.situacao && (
-                <span className="px-3 py-1.5 bg-gray-100 border border-gray-200 text-xs rounded-full font-semibold text-gray-900">
+              {jogador.situacao ? (
+                <span className="rounded-full border border-gray-200 bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-900">
                   {jogador.situacao}
                 </span>
-              )}
+              ) : null}
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-[13px] text-gray-600">Pé dominante:</span>
               <div className="inline-flex items-center gap-0.5">
                 <img
@@ -337,7 +354,7 @@ export default function PlayerDetailPage() {
                   className={isDomDireito ? "h-[22px] w-[22px]" : "h-4 w-4"}
                 />
               </div>
-              <span className="font-bold text-gray-900 text-[13px]">
+              <span className="text-[13px] font-bold text-gray-900">
                 {labelDominante(pe)}
               </span>
             </div>
@@ -348,56 +365,42 @@ export default function PlayerDetailPage() {
           {clubName ? (
             <ClubBadge nome={clubName} logoUrl={clubLogo} />
           ) : (
-            <div className="px-3 py-2 rounded-xl border border-gray-200 bg-white text-xs text-gray-500">
+            <div className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-500">
               Clube não informado
             </div>
           )}
         </div>
       </header>
 
-      <section className="bg-white border border-gray-200 rounded-[14px] p-4 mb-3.5">
-        <h2 className="font-extrabold text-base mb-3 text-slate-900">
-          Informações
-        </h2>
+      <section className="mb-3.5 rounded-[14px] border border-gray-200 bg-white p-4">
+        <h2 className="mb-3 text-base font-extrabold text-slate-900">Informações</h2>
 
         <div className="grid grid-cols-3 gap-3">
-          {jogador.representacao && (
-            <Info label="Representação" value={jogador.representacao} />
-          )}
+          {jogador.representacao ? <Info label="Representação" value={jogador.representacao} /> : null}
 
-          {possePctLabel && (
-            <Info label="Posse Serrano" value={possePctLabel} />
-          )}
+          {possePctLabel ? <Info label="Posse Serrano" value={possePctLabel} /> : null}
 
-          {typeof jogador.numeroCamisa === "number" && (
+          {typeof jogador.numeroCamisa === "number" ? (
             <Info label="Número da camisa" value={`#${jogador.numeroCamisa}`} />
-          )}
+          ) : null}
 
-          {typeof jogador.altura === "number" && (
-            <Info label="Altura" value={`${jogador.altura} cm`} />
-          )}
+          {typeof jogador.altura === "number" ? <Info label="Altura" value={`${jogador.altura} cm`} /> : null}
 
-          {mostrarValorMercado && (
+          {mostrarValorMercado ? (
             <Info
               label="Valor mercado"
-              value={valorMercadoInteiro.toLocaleString("pt-BR", {
-                style: "currency",
-                currency: "EUR",
-              })}
+              value={valorMercadoInteiro.toLocaleString("pt-BR", { style: "currency", currency: "EUR" })}
             />
-          )}
+          ) : null}
 
-          {mostrarValorSerrano && (
+          {mostrarValorSerrano ? (
             <Info
               label="Valor do Serrano"
-              value={valorSerranoInteiro.toLocaleString("pt-BR", {
-                style: "currency",
-                currency: "EUR",
-              })}
+              value={valorSerranoInteiro.toLocaleString("pt-BR", { style: "currency", currency: "EUR" })}
             />
-          )}
+          ) : null}
 
-          {jogador.passaporte?.europeu && (
+          {jogador.passaporte?.europeu ? (
             <Info
               label="Passaporte UE"
               value={
@@ -405,47 +408,35 @@ export default function PlayerDetailPage() {
                   <img
                     src={PASSPORT_EU}
                     alt="Passaporte UE"
-                    className="w-4 h-4 inline-block align-middle mr-1"
+                    className="mr-1 inline-block h-4 w-4 align-middle"
                   />
                   {jogador.passaporte.pais}
                 </>
               }
             />
-          )}
+          ) : null}
 
-          {jogador.selecao?.convocado && (
+          {jogador.selecao?.convocado ? (
             <Info
               label="Seleção"
               value={`Convocado${
-                jogador.selecao.anos?.length
-                  ? ` (${jogador.selecao.anos.join(", ")})`
-                  : ""
-              }${
-                jogador.selecao.categoria
-                  ? ` – ${jogador.selecao.categoria}`
-                  : ""
-              }`}
+                jogador.selecao.anos?.length ? ` (${jogador.selecao.anos.join(", ")})` : ""
+              }${jogador.selecao.categoria ? ` – ${jogador.selecao.categoria}` : ""}`}
             />
-          )}
+          ) : null}
         </div>
       </section>
 
-      {showResumo && (
-        <section className="bg-white border border-gray-200 rounded-[14px] p-4 mb-3.5">
-          <h2 className="font-extrabold text-base text-slate-900 m-0">
-            Resumo
-          </h2>
+      {showResumo ? (
+        <section className="mb-3.5 rounded-[14px] border border-gray-200 bg-white p-4">
+          <h2 className="m-0 text-base font-extrabold text-slate-900">Resumo</h2>
 
-          <div className="mt-4 grid grid-cols-[1fr_1.2fr] gap-6 items-stretch">
-            <div className="flex flex-col h-full">
+          <div className="mt-4 grid items-stretch gap-6 md:grid-cols-[1fr_1.2fr]">
+            <div className="flex h-full flex-col">
               <div className="flex justify-center">
                 <div className="flex items-center gap-2">
                   <span className="text-[13px] text-gray-600">Temporada</span>
-                  <SeasonSelect
-                    value={season}
-                    options={seasonOptions}
-                    onChange={setSeason}
-                  />
+                  <SeasonSelect value={season} options={seasonOptions} onChange={setSeason} />
                 </div>
               </div>
 
@@ -460,9 +451,9 @@ export default function PlayerDetailPage() {
 
             <div className="flex items-center justify-center">
               {videoEmbed ? (
-                <div className="w-full max-w-[560px] aspect-video bg-black rounded-xl overflow-hidden shadow-[0_10px_28px_rgba(0,0,0,0.12)]">
+                <div className="aspect-video w-full max-w-[560px] overflow-hidden rounded-xl bg-black shadow-[0_10px_28px_rgba(0,0,0,0.12)]">
                   <iframe
-                    className="w-full h-full block"
+                    className="block h-full w-full"
                     src={videoEmbed}
                     title="Vídeo do jogador"
                     frameBorder={0}
@@ -471,91 +462,78 @@ export default function PlayerDetailPage() {
                   />
                 </div>
               ) : (
-                <div className="w-full max-w-[560px] aspect-video rounded-xl border border-gray-200 bg-gray-50 grid place-items-center text-sm text-gray-500">
+                <div className="aspect-video w-full max-w-[560px] rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-500 grid place-items-center">
                   Sem vídeo cadastrado
                 </div>
               )}
             </div>
           </div>
         </section>
-      )}
+      ) : null}
 
-      {showInstagram && (
-        <section className="bg-white border border-gray-200 rounded-[14px] p-4 mb-3.5">
-          <div className="flex justify-between items-center mb-3 gap-3">
-            <h2 className="font-extrabold text-base text-slate-900 m-0">
-              Instagram
-            </h2>
+      {showInstagram ? (
+        <section className="mb-3.5 rounded-[14px] border border-gray-200 bg-white p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="m-0 text-base font-extrabold text-slate-900">Instagram</h2>
             <a
-              href={`https://www.instagram.com/${jogador.instagramHandle!.replace(
-                "@",
-                "",
-              )}/`}
+              href={`https://www.instagram.com/${jogador.instagramHandle!.replace("@", "")}/`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-[13px] font-bold text-gray-900 border border-gray-200 rounded-full px-2.5 py-1.5 bg-white"
+              className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2.5 py-1.5 text-[13px] font-bold text-gray-900"
             >
               <Instagram size={16} />
               <span>@{jogador.instagramHandle!.replace("@", "")}</span>
             </a>
           </div>
 
-          {jogador.instagramPosts && jogador.instagramPosts.length > 0 && (
-            <div className="grid grid-cols-3 gap-2.5 auto-rows-fr">
+          {jogador.instagramPosts && jogador.instagramPosts.length > 0 ? (
+            <div className="grid auto-rows-fr grid-cols-3 gap-2.5">
               {jogador.instagramPosts.slice(0, 6).map((post, i) => (
                 <a
                   key={i}
                   href={post.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="relative w-full aspect-square rounded-xl overflow-hidden border border-[#eef1f5] bg-white group"
+                  className="group relative aspect-square w-full overflow-hidden rounded-xl border border-[#eef1f5] bg-white"
                 >
-                  {post.thumbUrl && (
+                  {post.thumbUrl ? (
                     <img
                       src={post.thumbUrl}
                       alt=""
                       loading="lazy"
-                      className="absolute inset-0 w-full h-full object-cover block transition-transform duration-200 ease-out group-hover:scale-[1.04]"
+                      className="absolute inset-0 block h-full w-full object-cover transition-transform duration-200 ease-out group-hover:scale-[1.04]"
                     />
-                  )}
+                  ) : null}
                 </a>
               ))}
             </div>
-          )}
+          ) : null}
         </section>
-      )}
+      ) : null}
     </section>
   );
 }
 
 /* ========================= COMPONENTES AUXILIARES ========================= */
 
-function ClubBadge({
-  nome,
-  logoUrl,
-}: {
-  nome: string;
-  logoUrl?: string | null;
-}) {
+function ClubBadge({ nome, logoUrl }: { nome: string; logoUrl?: string | null }) {
   return (
-    <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-[14px] border border-gray-200 bg-white shadow-[0_6px_18px_rgba(0,0,0,0.05)]">
+    <div className="flex items-center gap-3 rounded-[14px] border border-gray-200 bg-white px-3.5 py-2.5 shadow-[0_6px_18px_rgba(0,0,0,0.05)]">
       {logoUrl ? (
         <img
           src={logoUrl}
           alt={nome}
-          className="w-10 h-10 rounded-full object-contain bg-white border border-gray-100"
+          className="h-10 w-10 rounded-full border border-gray-100 bg-white object-contain"
         />
       ) : (
-        <div className="w-10 h-10 rounded-full bg-gray-200 grid place-items-center text-gray-700 font-extrabold">
+        <div className="grid h-10 w-10 place-items-center rounded-full bg-gray-200 font-extrabold text-gray-700">
           {nome[0]}
         </div>
       )}
 
       <div className="flex flex-col leading-tight">
-        <span className="text-[11px] uppercase tracking-wider text-gray-500">
-          Clube
-        </span>
-        <span className="font-extrabold text-[13px] text-gray-900 max-w-[220px] whitespace-nowrap overflow-hidden text-ellipsis">
+        <span className="text-[11px] uppercase tracking-wider text-gray-500">Clube</span>
+        <span className="max-w-[220px] overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-extrabold text-gray-900">
           {nome}
         </span>
       </div>
@@ -565,24 +543,18 @@ function ClubBadge({
 
 function Info({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="bg-gray-50 border border-[#eef1f5] rounded-[10px] px-3 py-2.5 flex flex-col">
-      <span className="text-gray-500 text-xs uppercase tracking-wider">
-        {label}
-      </span>
-      <span className="font-bold text-[13px] text-gray-900">{value}</span>
+    <div className="flex flex-col rounded-[10px] border border-[#eef1f5] bg-gray-50 px-3 py-2.5">
+      <span className="text-xs uppercase tracking-wider text-gray-500">{label}</span>
+      <span className="text-[13px] font-bold text-gray-900">{value}</span>
     </div>
   );
 }
 
 function StatItem({ label, value }: { label: string; value: number }) {
   return (
-    <div className="text-center min-w-[90px]">
-      <span className="text-[28px] font-extrabold text-slate-900 leading-none">
-        {value}
-      </span>
-      <div className="text-xs text-gray-500 uppercase tracking-wider mt-1">
-        {label}
-      </div>
+    <div className="min-w-[90px] text-center">
+      <span className="leading-none text-[28px] font-extrabold text-slate-900">{value}</span>
+      <div className="mt-1 text-xs uppercase tracking-wider text-gray-500">{label}</div>
     </div>
   );
 }

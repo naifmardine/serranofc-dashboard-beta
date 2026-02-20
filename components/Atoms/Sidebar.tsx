@@ -1,25 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 
 import { navGroups } from "@/config/nav";
 import type { NavGroup } from "@/config/nav";
-import { Role } from "@prisma/client";
-import { useAuth } from "@/auth/AuthContext";
+import { useAuth } from "../../app/auth/AuthContext"
 
 export default function Sidebar() {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
 
   const [collapsed, setCollapsed] = useState(false);
-
-  // Use user role if available, default to CLIENT
-  const effectiveRole: Role = user?.role ?? "CLIENT";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -40,21 +35,80 @@ export default function Sidebar() {
     window.localStorage.setItem("sb_collapsed", collapsed ? "1" : "0");
   }, [collapsed]);
 
+  // Não inventa role quando não tem user.
+  const effectiveRole = user?.role ?? null;
+
   const displayName = user?.name || user?.email || "Usuário";
   const displaySub = "Serrano Football Club";
   const isDense = effectiveRole === "ADMIN";
 
-  const handleLogout = () => {
-    logout?.();
-    router.push("/login");
-  };
+const handleLogout = async () => {
+  console.log("[SIDEBAR] click logout");
+  await logout();
+};
+
+
+  // Se ainda está carregando sessão, evita renderizar nav “errada”
+  if (loading) {
+    return (
+      <aside
+        className={clsx(
+          "fixed left-0 top-0 z-30 flex h-dvh flex-col border-r border-white/10 bg-[#003399] text-white select-none",
+          "transition-[width] duration-200 ease-out",
+          collapsed ? "w-[84px]" : "w-[248px]",
+        )}
+      >
+        <div className="flex items-center justify-between gap-2 px-2.5 pt-3 pb-2">
+          <div className="flex items-center gap-2.5">
+            <div
+              className={clsx(
+                "rounded-lg bg-white/15",
+                collapsed ? "h-8 w-8" : "h-12 w-12",
+              )}
+            />
+            {!collapsed && (
+              <span className="text-sm font-bold tracking-[0.02em] opacity-80">
+                Serrano FC
+              </span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setCollapsed((v) => !v)}
+            aria-label={collapsed ? "Expandir sidebar" : "Recolher sidebar"}
+            title={collapsed ? "Expandir" : "Recolher"}
+            className="grid h-[26px] w-[26px] place-items-center rounded-lg border border-white/20 bg-transparent text-white transition-colors hover:bg-white/15 cursor-pointer"
+          >
+            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          </button>
+        </div>
+
+        <div className="mx-2 my-2 rounded-xl bg-white/10 px-3 py-3">
+          <div className="h-4 w-3/4 rounded bg-white/15" />
+          <div className="mt-2 h-3 w-2/3 rounded bg-white/10" />
+        </div>
+
+        <div className="flex-1 px-2.5 pb-3 pt-1">
+          <div className="mt-2 space-y-2">
+            <div className="h-8 rounded bg-white/10" />
+            <div className="h-8 rounded bg-white/10" />
+            <div className="h-8 rounded bg-white/10" />
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
+  // Se não tem user (não autenticado), não mostra sidebar (evita “sem usuário” navegável)
+  if (!user) return null;
 
   return (
     <aside
       className={clsx(
         "fixed left-0 top-0 z-30 flex h-dvh flex-col border-r border-white/10 bg-[#003399] text-white select-none",
         "transition-[width] duration-200 ease-out",
-        collapsed ? "w-[84px]" : "w-[248px]"
+        collapsed ? "w-[84px]" : "w-[248px]",
       )}
     >
       {/* topo: logo + botão de colapsar */}
@@ -65,7 +119,7 @@ export default function Sidebar() {
             alt="Serrano FC"
             className={clsx(
               "object-contain transition-[width,height] duration-200 ease-out",
-              collapsed ? "h-8 w-8" : "h-12 w-12"
+              collapsed ? "h-8 w-8" : "h-12 w-12",
             )}
           />
           {!collapsed && (
@@ -91,13 +145,13 @@ export default function Sidebar() {
         href="/perfil"
         className={clsx(
           "mx-2 my-1 flex items-center rounded-xl bg-white/10 px-3 py-2.5 text-white no-underline transition-colors hover:bg-white/15 cursor-pointer",
-          collapsed && "justify-center px-2"
+          collapsed && "justify-center px-2",
         )}
       >
         <div
           className={clsx(
             "h-7 w-7 rounded-full border border-white/40 bg-linear-to-br from-white to-[#d9e0ff]",
-            collapsed && "h-8 w-8"
+            collapsed && "h-8 w-8",
           )}
         />
         {!collapsed && (
@@ -112,12 +166,12 @@ export default function Sidebar() {
       <div className="flex-1 overflow-y-auto px-1.5 pb-3 pt-1 sidebar-scroll">
         {(navGroups as NavGroup[]).map((g) => {
           const visible =
-            g.items?.filter((it) => it.roles?.includes(effectiveRole)) ?? [];
+            g.items?.filter((it) => it.roles?.includes(user.role)) ?? [];
           if (visible.length === 0) return null;
 
           return (
             <div key={g.label} className="mt-2">
-              {effectiveRole === "ADMIN" && !collapsed && (
+              {user.role === "ADMIN" && !collapsed && (
                 <div className="px-2.5 pb-1 text-[11px] font-medium uppercase tracking-[0.12em] text-white/70">
                   {g.label}
                 </div>
@@ -138,14 +192,15 @@ export default function Sidebar() {
                       collapsed && "justify-center gap-0 px-2",
                       isActive
                         ? "bg-[#002774] text-white"
-                        : "text-white hover:bg-white/10"
+                        : "text-white hover:bg-white/10",
                     )}
                   >
                     <span
                       className={clsx(
                         "grid place-items-center rounded-lg transition-[width,height] duration-200 ease-out",
                         isDense ? "h-[22px] w-[22px]" : "h-6 w-6",
-                        collapsed && (isDense ? "h-[26px] w-[26px]" : "h-7 w-7")
+                        collapsed &&
+                          (isDense ? "h-[26px] w-[26px]" : "h-7 w-7"),
                       )}
                     >
                       <item.icon size={16} />
@@ -161,7 +216,7 @@ export default function Sidebar() {
         })}
       </div>
 
-      {/* rodapé: logout com cara de botão */}
+      {/* rodapé: logout */}
       <div className="mt-auto px-2.5 pb-3 pt-1">
         <button
           type="button"
@@ -169,7 +224,7 @@ export default function Sidebar() {
           className={clsx(
             "flex w-full items-center justify-center gap-2 rounded-lg border border-white/25 bg-white/10 px-3 py-2 text-sm font-medium text-white/90",
             "transition-colors hover:bg-white/20 hover:text-white cursor-pointer",
-            collapsed && "w-10 mx-auto px-0 justify-center"
+            collapsed && "w-10 mx-auto px-0 justify-center",
           )}
           title="Sair"
         >

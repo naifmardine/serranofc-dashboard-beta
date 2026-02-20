@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 
+import PageTitle from "@/components/Atoms/PageTitle";
 import Card from "@/components/Card";
 import PlayerRow from "@/components/PlayerRow";
 import JogadoresFilterDrawer, {
@@ -11,8 +12,11 @@ import JogadoresFilterDrawer, {
 import type { Jogador } from "@/type/jogador";
 import { LayoutGrid, List, SlidersHorizontal } from "lucide-react";
 
+import ExportPrintButton from "@/components/ExportPrintButton";
+import { useDashboardPdfExport } from "@/hooks/useDashboardPdfExport";
+
 /* =========================
-   Error boundary (mantido)
+   Error boundary
 ========================= */
 class PageErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -35,7 +39,9 @@ class PageErrorBoundary extends React.Component<
             <h3 className="mb-2 font-bold">Erro ao carregar “Jogadores”.</h3>
             <pre className="whitespace-pre-wrap wrap-break-word text-xs text-red-800">
               {String(
-                this.state.err?.message ?? this.state.err ?? "Erro desconhecido",
+                this.state.err?.message ??
+                  this.state.err ??
+                  "Erro desconhecido",
               )}
             </pre>
           </div>
@@ -49,22 +55,14 @@ class PageErrorBoundary extends React.Component<
 /* =========================
    Helpers
 ========================= */
-const EMPTY_FILTERS: JogadoresFilters = {
-  clubes: [],
-  agencias: [],
-  posicoes: [],
-  peDominante: [],
-  idadeMin: undefined,
-  idadeMax: undefined,
-  valorMin: undefined,
-  valorMax: undefined,
-};
+
+type View = "grid" | "list";
+type AgeMode = "idade" | "anoNascimento";
 
 function normStr(v: any) {
   return String(v ?? "").trim();
 }
 
-// considera essas strings como "vazio" pro filtro de agência
 function normalizeAgency(v: any) {
   const s = normStr(v).toLowerCase();
   if (!s) return "";
@@ -74,9 +72,15 @@ function normalizeAgency(v: any) {
 }
 
 function normalizeClub(j: any) {
-  // teu backend já deveria mandar clubeNome, mas fica resiliente
   const s = normStr(j?.clubeNome ?? j?.clube);
   return s || "—";
+}
+
+function safeNumber(v: any): number | null {
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  if (v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
 function agencyMatches(j: any, selected: string[]) {
@@ -88,20 +92,87 @@ function agencyMatches(j: any, selected: string[]) {
   const wantsNone = selected.includes(NONE_AGENCY);
   const selectedAgencies = selected.filter((x) => x !== NONE_AGENCY);
 
-  // só "Sem agência"
   if (wantsNone && selectedAgencies.length === 0) return !hasAgency;
 
-  // mistura: "Sem agência" OU (agências selecionadas)
   if (wantsNone) {
     return !hasAgency || (hasAgency && selectedAgencies.includes(agency));
   }
 
-  // só agências normais
   return hasAgency && selectedAgencies.includes(agency);
 }
 
+/**
+ * FILTRO ÚNICO E FIEL AO DRAWER
+ */
+function applyJogadoresFilters(players: Jogador[], f: JogadoresFilters) {
+  const ageMode: AgeMode = ((f as any).ageMode as AgeMode) ?? "idade";
+
+  const { idadeMin, idadeMax } = f as any;
+  const anoMin = (f as any).anoNascimentoMin;
+  const anoMax = (f as any).anoNascimentoMax;
+
+  const { valorMin, valorMax } = f as any;
+  const valorSemDefinicao = Boolean((f as any).valorSemDefinicao);
+
+  return players.filter((j: any) => {
+    const clubeNome = normalizeClub(j);
+    if (f.clubes?.length && !f.clubes.includes(clubeNome)) return false;
+
+    if (!agencyMatches(j, f.agencias ?? [])) return false;
+
+    const pos = normStr(j?.posicao);
+    if (f.posicoes?.length && !f.posicoes.includes(pos)) return false;
+
+    const pe = normStr(j?.peDominante);
+    if (f.peDominante?.length && !f.peDominante.includes(pe)) return false;
+
+    if (ageMode === "idade") {
+      const idade = safeNumber(j?.idade) ?? 0;
+      if (typeof idadeMin === "number" && idade < idadeMin) return false;
+      if (typeof idadeMax === "number" && idade > idadeMax) return false;
+    } else {
+      const ano = safeNumber(j?.anoNascimento);
+      if (ano == null) return false;
+      if (typeof anoMin === "number" && ano < anoMin) return false;
+      if (typeof anoMax === "number" && ano > anoMax) return false;
+    }
+
+    const valor = safeNumber(j?.valorMercado);
+
+    if (valorSemDefinicao) {
+      if (valor != null && valor > 0) return false;
+      return true;
+    }
+
+    const v = valor ?? 0;
+    if (typeof valorMin === "number" && v < valorMin) return false;
+    if (typeof valorMax === "number" && v > valorMax) return false;
+
+    return true;
+  });
+}
+
+/* =========================
+   Defaults
+========================= */
+
+const EMPTY_FILTERS: JogadoresFilters = {
+  clubes: [],
+  agencias: [],
+  posicoes: [],
+  peDominante: [],
+  idadeMin: undefined,
+  idadeMax: undefined,
+  valorMin: undefined,
+  valorMax: undefined,
+  ageMode: "idade",
+  anoNascimentoMin: undefined,
+  anoNascimentoMax: undefined,
+  valorSemDefinicao: false,
+};
+
 export default function JogadoresPage() {
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [view, setView] = useState<View>("grid");
   const [data, setData] = useState<Jogador[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,10 +180,37 @@ export default function JogadoresPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<JogadoresFilters>(EMPTY_FILTERS);
 
+  // EXPORT
+  const {
+    exportRef,
+    exportPdf,
+    exporting,
+    error: exportError,
+  } = useDashboardPdfExport();
+
+  const handleExport = useCallback(() => {
+    void exportPdf({
+      filename: `jogadores-${view}-${new Date().toISOString().slice(0, 10)}.pdf`,
+      format: "a4",
+      orientation: "portrait",
+      marginMm: 8,
+      scale: 2,
+      blockSelector: `[data-pdf-block="true"]`,
+      header: {
+        title: "Jogadores",
+        subtitle: `Modo: ${view} • Filtros: ${activeFiltersCount} • Mostrando: ${filtered.length}`,
+        rightText: new Date().toISOString().slice(0, 10),
+      },
+      footer: {
+        leftText: "Serrano FC",
+      },
+    });
+  }, [exportPdf, view]);
+
   useEffect(() => {
     let active = true;
 
-    async function load() {
+    const load = async () => {
       try {
         setLoading(true);
         setError(null);
@@ -128,26 +226,28 @@ export default function JogadoresPage() {
             ? raw.jogadores
             : [];
 
-        // normalização mínima (sem inventar dado — só estabiliza shape)
-        const normalizado: Jogador[] = listaApi.map((p: any) => ({
-          ...p,
-          id: String(p.id),
-          nome: p.nome ?? "",
-          idade: typeof p.idade === "number" ? p.idade : Number(p.idade ?? 0),
-          posicao: p.posicao ?? "—",
-          valorMercado:
-            typeof p.valorMercado === "number"
-              ? p.valorMercado
-              : Number(p.valorMercado ?? 0),
-          peDominante: (p.peDominante ?? "D") as Jogador["peDominante"],
-          representacao: p.representacao ?? "",
-          numeroCamisa: p.numeroCamisa ?? 0,
-          imagemUrl: p.imagemUrl ?? undefined,
+        const normalizado: Jogador[] = listaApi.map((p: any) => {
+          const idadeN = safeNumber(p?.idade);
+          const anoN = safeNumber(p?.anoNascimento);
+          const valorN = safeNumber(p?.valorMercado);
 
-          // clubeNome/club fallback:
-          clubeNome: p.clubeNome ?? p.clube ?? "—",
-          clube: p.clube ?? p.clubeNome ?? "—",
-        }));
+          return {
+            ...p,
+            id: String(p.id),
+            nome: String(p.nome ?? ""),
+            idade: idadeN == null ? 0 : Math.trunc(idadeN),
+            anoNascimento: anoN == null ? null : Math.trunc(anoN),
+            posicao: p.posicao ?? "ATA",
+            valorMercado: valorN == null ? 0 : valorN,
+            peDominante: (p.peDominante ?? "D") as Jogador["peDominante"],
+            representacao: p.representacao ?? "",
+            numeroCamisa: p.numeroCamisa ?? null,
+            imagemUrl: p.imagemUrl ?? undefined,
+            clubeNome: p.clubeNome ?? p.clubeRef?.nome ?? p.clube ?? "—",
+            clubeId: p.clubeId ?? p.clubeRef?.id ?? null,
+            clubeRef: p.clubeRef ?? null,
+          } as Jogador;
+        });
 
         if (active) setData(normalizado);
       } catch (err: any) {
@@ -156,9 +256,9 @@ export default function JogadoresPage() {
       } finally {
         if (active) setLoading(false);
       }
-    }
+    };
 
-    load();
+    void load();
     return () => {
       active = false;
     };
@@ -166,205 +266,219 @@ export default function JogadoresPage() {
 
   const jogadores = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
-  const filtered = useMemo(() => {
-    const f = filters;
-
-    return jogadores.filter((j: any) => {
-      // clube
-      const clubeNome = normalizeClub(j);
-      if (f.clubes.length && !f.clubes.includes(clubeNome)) return false;
-
-      // agência (CORRIGIDO: sentinel + vazio)
-      if (!agencyMatches(j, f.agencias)) return false;
-
-      // posição
-      const pos = normStr(j?.posicao);
-      if (f.posicoes.length && !f.posicoes.includes(pos)) return false;
-
-      // pé dominante
-      const pe = normStr(j?.peDominante);
-      if (f.peDominante.length && !f.peDominante.includes(pe)) return false;
-
-      // idade
-      const idade = Number(j?.idade ?? 0);
-      if (typeof f.idadeMin === "number" && idade < f.idadeMin) return false;
-      if (typeof f.idadeMax === "number" && idade > f.idadeMax) return false;
-
-      // valor (em milhões, como no drawer)
-      const valor = Number(j?.valorMercado ?? 0);
-      if (typeof f.valorMin === "number" && valor < f.valorMin) return false;
-      if (typeof f.valorMax === "number" && valor > f.valorMax) return false;
-
-      return true;
-    });
-  }, [jogadores, filters]);
+  const filtered = useMemo(
+    () => applyJogadoresFilters(jogadores, filters),
+    [jogadores, filters],
+  );
 
   const activeFiltersCount = useMemo(() => {
     let n = 0;
-    if (filters.clubes.length) n++;
-    if (filters.agencias.length) n++;
-    if (filters.posicoes.length) n++;
-    if (filters.peDominante.length) n++;
-    if (
-      typeof filters.idadeMin === "number" ||
-      typeof filters.idadeMax === "number"
-    )
+
+    if (filters.clubes?.length) n++;
+    if (filters.agencias?.length) n++;
+    if (filters.posicoes?.length) n++;
+    if (filters.peDominante?.length) n++;
+
+    const ageMode: AgeMode = ((filters as any).ageMode as AgeMode) ?? "idade";
+    if (ageMode === "idade") {
+      if (
+        typeof (filters as any).idadeMin === "number" ||
+        typeof (filters as any).idadeMax === "number"
+      )
+        n++;
+    } else if (
+      typeof (filters as any).anoNascimentoMin === "number" ||
+      typeof (filters as any).anoNascimentoMax === "number"
+    ) {
       n++;
-    if (
-      typeof filters.valorMin === "number" ||
-      typeof filters.valorMax === "number"
-    )
+    }
+
+    const semValor = Boolean((filters as any).valorSemDefinicao);
+    if (semValor) n++;
+    else if (
+      typeof (filters as any).valorMin === "number" ||
+      typeof (filters as any).valorMax === "number"
+    ) {
       n++;
+    }
+
     return n;
   }, [filters]);
+
+  const headerActions = (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <ExportPrintButton
+        onClick={handleExport}
+        loading={exporting}
+        disabled={loading || exporting || !!error}
+        data-no-export="true"
+      />
+
+      <button
+        type="button"
+        onClick={() => setFiltersOpen(true)}
+        data-no-export="true"
+        className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-gray-50"
+      >
+        <SlidersHorizontal size={16} />
+        Filtros
+        {activeFiltersCount > 0 && (
+          <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#f2cd00] px-1.5 text-xs font-bold text-black">
+            {activeFiltersCount}
+          </span>
+        )}
+      </button>
+
+      <div
+        className="hidden text-sm text-gray-500 sm:block"
+        data-no-export="true"
+      >
+        {loading ? "Carregando..." : `${filtered.length} / ${jogadores.length}`}
+      </div>
+
+      <div
+        className="inline-flex overflow-hidden rounded-lg border border-gray-200 bg-white"
+        role="group"
+        aria-label="Alternar visualização"
+        data-no-export="true"
+      >
+        <button
+          type="button"
+          className={[
+            "flex cursor-pointer items-center gap-1.5 border-none px-3 py-2 text-sm font-medium transition-colors duration-150 hover:bg-gray-100",
+            view === "grid"
+              ? "bg-[#f2cd00] font-bold text-black"
+              : "text-slate-900",
+          ].join(" ")}
+          onClick={() => setView("grid")}
+          aria-pressed={view === "grid"}
+          title="Exibir em cards"
+        >
+          <LayoutGrid size={16} />
+          Cards
+        </button>
+
+        <button
+          type="button"
+          className={[
+            "flex cursor-pointer items-center gap-1.5 border-none px-3 py-2 text-sm font-medium transition-colors duration-150 hover:bg-gray-100",
+            view === "list"
+              ? "bg-[#f2cd00] font-bold text-black"
+              : "text-slate-900",
+          ].join(" ")}
+          onClick={() => setView("list")}
+          aria-pressed={view === "list"}
+          title="Exibir em lista"
+        >
+          <List size={16} />
+          Lista
+        </button>
+      </div>
+
+      <div className="text-sm text-gray-500 sm:hidden" data-no-export="true">
+        {loading ? "Carregando..." : `${filtered.length} / ${jogadores.length}`}
+      </div>
+    </div>
+  );
 
   return (
     <PageErrorBoundary>
       <section className="w-full bg-gray-50 p-6">
-        <div className="mb-4 flex flex-col gap-3">
-          <nav
-            className="flex items-center gap-1.5 text-sm text-gray-500"
-            aria-label="Breadcrumb"
-          >
-            <span>Principal</span>
-            <span>›</span>
-            <span className="font-semibold text-slate-900">Jogadores</span>
-          </nav>
+        <PageTitle
+          base="Principal"
+          title="Jogadores"
+          subtitle="Explore o elenco e filtre por clube, posição, agência e métricas."
+          actions={headerActions}
+        />
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold text-slate-900">
-                Jogadores
-              </h2>
-
-              <button
-                type="button"
-                onClick={() => setFiltersOpen(true)}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-gray-50"
-              >
-                <SlidersHorizontal size={16} />
-                Filtros
-                {activeFiltersCount > 0 && (
-                  <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#f2cd00] px-1.5 text-xs font-bold text-black">
-                    {activeFiltersCount}
-                  </span>
-                )}
-              </button>
-
-              <div className="text-sm text-gray-500">
-                {loading
-                  ? "Carregando..."
-                  : `${filtered.length} / ${jogadores.length}`}
-              </div>
-            </div>
-
-            <div
-              className="inline-flex overflow-hidden rounded-lg border border-gray-200 bg-white"
-              role="group"
-              aria-label="Alternar visualização"
-            >
-              <button
-                type="button"
-                className={`flex cursor-pointer items-center gap-1.5 border-none px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-150 hover:bg-gray-100 ${
-                  view === "grid" ? "bg-[#f2cd00] font-bold text-black" : ""
-                }`}
-                onClick={() => setView("grid")}
-                aria-pressed={view === "grid"}
-                title="Exibir em cards"
-              >
-                <LayoutGrid size={16} />
-                Cards
-              </button>
-              <button
-                type="button"
-                className={`flex cursor-pointer items-center gap-1.5 border-none px-3 py-2 text-sm font-medium text-slate-900 transition-colors duration-150 hover:bg-gray-100 ${
-                  view === "list" ? "bg-[#f2cd00] font-bold text-black" : ""
-                }`}
-                onClick={() => setView("list")}
-                aria-pressed={view === "list"}
-                title="Exibir em lista"
-              >
-                <List size={16} />
-                Lista
-              </button>
-            </div>
+        {exportError ? (
+          <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+            Falha ao exportar: {exportError}
           </div>
-        </div>
+        ) : null}
 
         {loading && (
-          <div className="mt-2 text-sm text-gray-600">
+          <div className="mt-4 text-sm text-gray-600">
             Carregando jogadores...
           </div>
         )}
 
         {error && !loading && (
-          <div className="mt-2 text-sm text-red-600">
+          <div className="mt-4 text-sm text-red-600">
             Erro ao carregar jogadores: {error}
           </div>
         )}
 
         {!loading && !error && filtered.length === 0 && (
-          <div className="mt-2 text-sm text-gray-600">
+          <div className="mt-4 text-sm text-gray-600">
             Nenhum jogador com os filtros atuais.
           </div>
         )}
 
-        {!loading && !error && filtered.length > 0 && (
-          <>
-            {view === "grid" ? (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 overflow-x-hidden">
-                {filtered.map((p) => (
-                  <Card key={p.id} player={p} />
-                ))}
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse overflow-hidden rounded-[10px] bg-white">
-                  <thead>
-                    <tr>
-                      <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                        Jogador
-                      </th>
-                      <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                        Clube
-                      </th>
-                      <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                        Idade
-                      </th>
-                      <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                        Pé
-                      </th>
-                      <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                        Altura
-                      </th>
-                      <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                        Situação
-                      </th>
-                      <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                        Valor
-                      </th>
-                      <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                        Posse
-                      </th>
-                    </tr>
+        {/* ESCOPO EXPORTÁVEL */}
+        <div ref={exportRef} className="mt-4" data-export-scope="jogadores">
+          {!loading && !error && filtered.length > 0 && (
+            <>
+              {view === "grid" ? (
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 overflow-x-hidden">
+                  {filtered.map((p) => (
+                    <div key={p.id} data-pdf-block="true">
+                      <Card player={p} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div
+                  className="overflow-x-auto rounded-[10px] border border-gray-200 bg-white"
+                  data-export-scroll="true"
+                >
+                  <table className="w-full border-collapse bg-white">
+                    <thead>
+                      <tr>
+                        <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
+                          Jogador
+                        </th>
+                        <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
+                          Clube
+                        </th>
+                        <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
+                          Idade
+                        </th>
+                        <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
+                          Pé
+                        </th>
+                        <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
+                          Altura
+                        </th>
+                        <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
+                          Situação
+                        </th>
+                        <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
+                          Valor
+                        </th>
+                        <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
+                          Posse
+                        </th>
+                      </tr>
 
-                    <tr className="h-0">
-                      <th colSpan={8} className="h-0 border-none p-0">
-                        <div className="block h-[3px] w-full bg-[#f2cd00]" />
-                      </th>
-                    </tr>
-                  </thead>
+                      <tr className="h-0">
+                        <th colSpan={8} className="h-0 border-none p-0">
+                          <div className="block h-[3px] w-full bg-[#f2cd00]" />
+                        </th>
+                      </tr>
+                    </thead>
 
-                  <tbody>
-                    {filtered.map((p) => (
-                      <PlayerRow key={p.id} player={p} />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </>
-        )}
+                    <tbody>
+                      {filtered.map((p) => (
+                        <PlayerRow key={p.id} player={p} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </div>
 
         <JogadoresFilterDrawer
           open={filtersOpen}

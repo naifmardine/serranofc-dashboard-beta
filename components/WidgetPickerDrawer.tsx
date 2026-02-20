@@ -1,13 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
+import type {
   DashboardLayout,
   WidgetDefinition,
   WidgetGroup,
   WidgetId,
 } from "@/type/dashboard";
 import { SelectedChips } from "@/components/SelectedChips";
+import {
+  SlidersHorizontal,
+  CheckCircle2,
+  Layers,
+  Trash2,
+  ChevronDown,
+} from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -17,17 +24,9 @@ type Props = {
   onChange: (layout: DashboardLayout) => void;
 };
 
-/**
- * Drawer de personalização do dashboard
- * - Seleção por GRUPO (chips)
- * - Busca por texto
- * - Toggle de widgets (sem checklist infinito)
- * - Chips dos selecionados
- *
- * MVP:
- * - sem drag
- * - ordem preservada conforme layout.order
- */
+const SERRANO_BLUE = "#003399";
+const SERRANO_YELLOW = "#F2CD00";
+
 export function WidgetPickerDrawer({
   open,
   onClose,
@@ -35,33 +34,41 @@ export function WidgetPickerDrawer({
   widgets,
   onChange,
 }: Props) {
-  const [query, setQuery] = useState("");
   const [group, setGroup] = useState<WidgetGroup | "all">("all");
+  const [showActive, setShowActive] = useState(true);
 
   const enabledSet = useMemo(() => new Set(layout.enabled), [layout.enabled]);
 
-  const filteredWidgets = useMemo(() => {
-    return widgets.filter((w) => {
-      if (group !== "all" && w.group !== group) return false;
-      if (!query) return true;
+  const groupsWithCount = useMemo(() => {
+    const counts: Record<string, { total: number; enabled: number }> = {};
+    for (const w of widgets) {
+      const g = w.group;
+      if (!counts[g]) counts[g] = { total: 0, enabled: 0 };
+      counts[g].total += 1;
+      if (enabledSet.has(w.id)) counts[g].enabled += 1;
+    }
+    return {
+      all: { total: widgets.length, enabled: layout.enabled.length },
+      byGroup: counts,
+    };
+  }, [widgets, enabledSet, layout.enabled.length]);
 
-      const q = query.toLowerCase();
-      return (
-        w.title.toLowerCase().includes(q) ||
-        w.description?.toLowerCase().includes(q) ||
-        w.keywords?.some((k) => k.toLowerCase().includes(q))
-      );
-    });
-  }, [widgets, group, query]);
+  const filteredWidgets = useMemo(() => {
+    return widgets.filter((w) => (group === "all" ? true : w.group === group));
+  }, [widgets, group]);
 
   const toggleWidget = (id: WidgetId) => {
-    const nextEnabled = enabledSet.has(id)
+    const isEnabled = enabledSet.has(id);
+
+    const nextEnabled = isEnabled
       ? layout.enabled.filter((w) => w !== id)
       : [...layout.enabled, id];
 
-    const nextOrder = enabledSet.has(id)
+    const nextOrder = isEnabled
       ? layout.order.filter((w) => w !== id)
-      : [...layout.order, id];
+      : layout.order.includes(id)
+        ? layout.order
+        : [...layout.order, id];
 
     onChange({
       ...layout,
@@ -70,110 +77,273 @@ export function WidgetPickerDrawer({
     });
   };
 
+  function clearAll() {
+    onChange({
+      ...layout,
+      enabled: [],
+      order: [],
+    });
+  }
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex">
       {/* Overlay */}
-      <div className="flex-1 bg-black/30" onClick={onClose} />
+      <button
+        type="button"
+        aria-label="Fechar"
+        className="flex-1 bg-black/35 cursor-pointer"
+        onClick={onClose}
+      />
 
       {/* Drawer */}
-      <div className="w-full max-w-md bg-white shadow-xl flex flex-col">
-        {/* Header */}
+      <div className="w-full max-w-[680px] bg-white shadow-2xl flex flex-col">
+        {/* Header (fixo) */}
         <div className="border-b border-slate-200 p-4">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Editar dashboard
-          </h2>
-          <p className="text-sm text-slate-500">
-            Escolha quais gráficos aparecem na tela
-          </p>
-        </div>
-
-        {/* Search */}
-        <div className="p-4 border-b border-slate-100">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar gráficos..."
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
-          />
-        </div>
-
-        {/* Groups */}
-        <div className="px-4 py-2 flex flex-wrap gap-2 border-b border-slate-100">
-          <GroupChip active={group === "all"} onClick={() => setGroup("all")}>
-            Todos
-          </GroupChip>
-          {GROUPS.map((g) => (
-            <GroupChip key={g} active={group === g} onClick={() => setGroup(g)}>
-              {labelForGroup(g)}
-            </GroupChip>
-          ))}
-        </div>
-
-        {/* Selected */}
-        <SelectedChips
-          selected={layout.enabled}
-          widgets={widgets}
-          onRemove={toggleWidget}
-        />
-
-        {/* List */}
-        <div className="flex-1 overflow-auto p-4 space-y-2">
-          {filteredWidgets.map((w) => {
-            const enabled = enabledSet.has(w.id);
-
-            return (
-              <div
-                key={w.id}
-                className={[
-                  "flex items-start justify-between gap-3 rounded-lg border p-3 transition",
-                  enabled
-                    ? "border-slate-900 bg-slate-50"
-                    : "border-slate-200 hover:bg-slate-50",
-                ].join(" ")}
-              >
-                <div>
-                  <div className="text-sm font-medium text-slate-900">
-                    {w.title}
-                  </div>
-                  {w.description && (
-                    <div className="text-xs text-slate-500">
-                      {w.description}
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => toggleWidget(w.id)}
-                  className={[
-                    "rounded-md px-3 py-1 text-xs font-medium transition",
-                    enabled
-                      ? "bg-slate-900 text-white"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200",
-                  ].join(" ")}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span
+                  className="grid h-9 w-9 place-items-center rounded-xl border"
+                  style={{
+                    backgroundColor: `${SERRANO_BLUE}10`,
+                    borderColor: `${SERRANO_BLUE}20`,
+                  }}
                 >
-                  {enabled ? "Ativo" : "Adicionar"}
+                  <SlidersHorizontal
+                    className="h-4 w-4"
+                    style={{ color: SERRANO_BLUE }}
+                  />
+                </span>
+
+                <div className="min-w-0">
+                  <div className="text-sm font-extrabold text-slate-900">
+                    Personalizar dashboard
+                  </div>
+                  <div className="mt-0.5 text-xs text-slate-500">
+                    Ative/desative widgets. Use os grupos para navegar.
+                  </div>
+                </div>
+              </div>
+
+              {/* Resumo */}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {layout.enabled.length} ativo
+                  {layout.enabled.length === 1 ? "" : "s"}
+                </span>
+
+                <span className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+                  <Layers className="h-3.5 w-3.5" />
+                  {widgets.length} disponíve{widgets.length === 1 ? "l" : "is"}
+                </span>
+
+                {/* botão com cara de botão */}
+                <button
+                  type="button"
+                  onClick={() => setShowActive((s) => !s)}
+                  className={[
+                    "inline-flex items-center justify-center gap-2",
+                    "rounded-xl px-3 py-1.5 text-xs font-extrabold",
+                    "border shadow-sm transition cursor-pointer",
+                    "hover:opacity-90 active:scale-[0.99]",
+                    "text-white",
+                  ].join(" ")}
+                  style={{
+                    backgroundColor: SERRANO_BLUE,
+                    borderColor: `${SERRANO_BLUE}40`,
+                  }}
+                  title="Ver widgets ativos"
+                >
+                  {showActive ? "Ocultar ativos" : "Ver ativos"}
+                  <ChevronDown
+                    className={[
+                      "h-3.5 w-3.5 transition-transform",
+                      showActive ? "rotate-180" : "",
+                    ].join(" ")}
+                  />
                 </button>
               </div>
-            );
-          })}
+            </div>
 
-          {filteredWidgets.length === 0 && (
-            <div className="text-sm text-slate-500">
-              Nenhum gráfico encontrado.
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={clearAll}
+                disabled={layout.enabled.length === 0}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60 cursor-pointer"
+                title="Desativar todos"
+              >
+                <Trash2 className="h-4 w-4" />
+                Limpar
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-extrabold text-black cursor-pointer hover:brightness-95"
+                style={{ backgroundColor: SERRANO_YELLOW }}
+                title="Fechar"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+
+          {/* Ativos (colapsável, enxuto) */}
+          {showActive && (
+            <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/40 p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Ativos
+                </div>
+                <div className="text-xs text-slate-500">
+                  Clique num chip para remover
+                </div>
+              </div>
+
+              <SelectedChips
+                selected={layout.enabled}
+                widgets={widgets}
+                onRemove={toggleWidget}
+              />
+
+              {layout.enabled.length === 0 && (
+                <div className="mt-2 text-sm text-slate-500">
+                  Nenhum widget ativo.
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="border-t border-slate-200 p-4 flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
-          >
-            Fechar
-          </button>
+        {/* Content (scroll único do drawer) */}
+        <div className="flex-1 overflow-auto">
+          {/* Groups (centralizado) */}
+          <div className="border-b border-slate-100 px-4 py-3">
+            <div className="inline-flex w-full flex-wrap justify-center gap-2 rounded-2xl border border-slate-200 bg-white p-2">
+              <GroupTab
+                active={group === "all"}
+                onClick={() => setGroup("all")}
+                label="Todos"
+                meta={`${groupsWithCount.all.enabled}/${groupsWithCount.all.total}`}
+              />
+
+              {GROUPS.map((g) => {
+                const c = groupsWithCount.byGroup[g] ?? {
+                  enabled: 0,
+                  total: 0,
+                };
+                return (
+                  <GroupTab
+                    key={g}
+                    active={group === g}
+                    onClick={() => setGroup(g)}
+                    label={labelForGroup(g)}
+                    meta={`${c.enabled}/${c.total}`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          {/* List */}
+          <div className="px-4 py-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Widgets
+              </div>
+              <div className="text-xs text-slate-500">
+                {filteredWidgets.length} resultado
+                {filteredWidgets.length === 1 ? "" : "s"}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {filteredWidgets.map((w) => {
+                const enabled = enabledSet.has(w.id);
+
+                return (
+                  <div
+                    key={w.id}
+                    className={[
+                      "group flex items-start justify-between gap-3 rounded-2xl border p-3 transition",
+                      enabled
+                        ? "border-slate-900 bg-slate-50"
+                        : "border-slate-200 bg-white hover:bg-slate-50",
+                    ].join(" ")}
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-bold text-slate-900">
+                        {w.title}
+                      </div>
+
+                      {w.description ? (
+                        <div className="mt-0.5 line-clamp-2 text-xs text-slate-500">
+                          {w.description}
+                        </div>
+                      ) : null}
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                          {labelForGroup(w.group)}
+                        </span>
+
+                        {enabled ? (
+                          <span
+                            className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-extrabold"
+                            style={{
+                              backgroundColor: `${SERRANO_BLUE}10`,
+                              color: SERRANO_BLUE,
+                              border: `1px solid ${SERRANO_BLUE}20`,
+                            }}
+                          >
+                            Ativo
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500">
+                            Inativo
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* CTA com cores Serrano */}
+                    <button
+                      type="button"
+                      onClick={() => toggleWidget(w.id)}
+                      className={[
+                        "shrink-0 rounded-xl px-3 py-2 text-xs font-extrabold transition cursor-pointer",
+                        enabled
+                          ? "text-white hover:opacity-95"
+                          : "text-black hover:brightness-95",
+                      ].join(" ")}
+                      style={
+                        enabled
+                          ? { backgroundColor: SERRANO_BLUE }
+                          : { backgroundColor: SERRANO_YELLOW }
+                      }
+                      title={
+                        enabled
+                          ? "Remover do dashboard"
+                          : "Adicionar ao dashboard"
+                      }
+                    >
+                      {enabled ? "Remover" : "Adicionar"}
+                    </button>
+                  </div>
+                );
+              })}
+
+              {filteredWidgets.length === 0 && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                  Nenhum widget nesse grupo.
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -184,54 +354,52 @@ export function WidgetPickerDrawer({
 /* Auxiliares */
 /* ------------------------------------------------------------------ */
 
-const GROUPS: WidgetGroup[] = [
-  "overview",
-  "serrano",
-  "market",
-  "compare",
-  "finance",
-  "performance",
-];
+const GROUPS: WidgetGroup[] = ["serrano", "market", "compare"];
 
 function labelForGroup(group: WidgetGroup) {
   switch (group) {
-    case "overview":
-      return "Visão geral";
     case "serrano":
       return "Serrano";
     case "market":
       return "Mercado";
     case "compare":
       return "Comparativos";
-    case "finance":
-      return "Financeiro";
-    case "performance":
-      return "Performance";
     default:
       return group;
   }
 }
 
-function GroupChip({
+function GroupTab({
   active,
-  children,
+  label,
+  meta,
   onClick,
 }: {
-  active?: boolean;
-  children: React.ReactNode;
+  active: boolean;
+  label: string;
+  meta: string;
   onClick: () => void;
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={[
-        "rounded-full px-3 py-1 text-xs transition",
-        active
-          ? "bg-slate-900 text-white"
-          : "bg-slate-100 text-slate-700 hover:bg-slate-200",
+        "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition cursor-pointer",
+        active ? "text-white" : "text-slate-700 hover:bg-slate-50",
       ].join(" ")}
+      style={active ? { backgroundColor: SERRANO_BLUE } : undefined}
+      title={label}
     >
-      {children}
+      <span className="truncate">{label}</span>
+      <span
+        className={[
+          "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-extrabold",
+          active ? "bg-white/15 text-white" : "bg-slate-100 text-slate-700",
+        ].join(" ")}
+      >
+        {meta}
+      </span>
     </button>
   );
 }

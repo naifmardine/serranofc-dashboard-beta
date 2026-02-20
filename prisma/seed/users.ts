@@ -24,7 +24,7 @@ export async function seedUsers() {
     },
   });
 
-  console.log("✅ Admin criado:", admin.email);
+  console.log(" Admin criado:", admin.email);
 
   // Criar cliente
   const client = await prisma.user.create({
@@ -37,7 +37,7 @@ export async function seedUsers() {
     },
   });
 
-  console.log("✅ Cliente criado:", client.email);
+  console.log(" Cliente criado:", client.email);
 
   return { admin, client };
 }

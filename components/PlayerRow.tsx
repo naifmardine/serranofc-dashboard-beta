@@ -75,19 +75,18 @@ export default function PlayerRow({ player }: { player: Jogador }) {
       ? player.possePct.toFixed(0) + "%"
       : "—";
 
-  // ✅ altura funcionando
   const altura =
     typeof (player as any).altura === "number" &&
     Number.isFinite((player as any).altura)
       ? `${(player as any).altura} cm`
       : "—";
 
-  // ✅ valor: se 0 -> —
   const temValor = Number(player.valorMercado) > 0;
   const valorTxt = temValor ? fmtEUR(player.valorMercado) : "—";
 
   return (
     <tr
+      data-pdf-block="true"
       className="
         cursor-pointer
         transition-colors duration-150
@@ -99,7 +98,6 @@ export default function PlayerRow({ player }: { player: Jogador }) {
       onClick={go}
       onKeyDown={onKey}
     >
-      {/* Jogador */}
       <td className={tdBaseClasses}>
         <div className="flex items-center gap-3 min-w-0">
           <div
@@ -133,7 +131,6 @@ export default function PlayerRow({ player }: { player: Jogador }) {
         </div>
       </td>
 
-      {/* Clube */}
       <td className={tdBaseClasses}>
         <span
           className="inline-block truncate max-w-40"
@@ -143,10 +140,8 @@ export default function PlayerRow({ player }: { player: Jogador }) {
         </span>
       </td>
 
-      {/* Idade */}
       <td className={tdBaseClasses}>{player.idade}</td>
 
-      {/* Pé */}
       <td className={tdBaseClasses}>
         <div className="flex items-center gap-2.5 text-gray-900">
           <img
@@ -167,17 +162,14 @@ export default function PlayerRow({ player }: { player: Jogador }) {
         </div>
       </td>
 
-      {/* Altura */}
       <td className={tdBaseClasses}>{altura}</td>
 
-      {/* Situação */}
       <td className={tdBaseClasses}>
         <span className="truncate inline-block max-w-40" title={situacao}>
           {situacao}
         </span>
       </td>
 
-      {/* Valor */}
       <td className={tdBaseClasses}>
         <span
           className={
@@ -190,7 +182,6 @@ export default function PlayerRow({ player }: { player: Jogador }) {
         </span>
       </td>
 
-      {/* Posse */}
       <td className={tdBaseClasses}>{possePct}</td>
     </tr>
   );

@@ -5,17 +5,33 @@ import { z } from "zod";
 import jwt from "jsonwebtoken";
 import { compare, hash } from "bcryptjs";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_in_prod";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-function extractToken(authHeader?: string | null): string | null {
+const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_in_prod";
+const COOKIE_NAME = "sfc_token";
+
+type Decoded = { sub: string; role: "ADMIN" | "CLIENT" };
+
+function extractBearerToken(authHeader?: string | null): string | null {
   if (!authHeader) return null;
   const match = /^Bearer\s+(.+)$/i.exec(authHeader.trim());
-  return match?.[1] || null;
+  return match?.[1] ?? null;
 }
 
-function verifyToken(token: string): { sub: string; role: string } | null {
+function getTokenFromReq(req: NextRequest): string | null {
+  const bearer = extractBearerToken(req.headers.get("authorization"));
+  if (bearer) return bearer;
+  return req.cookies.get(COOKIE_NAME)?.value ?? null;
+}
+
+function verifyToken(token: string): Decoded | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { sub: string; role: string };
+    const payload = jwt.verify(token, JWT_SECRET) as any;
+    const sub = typeof payload?.sub === "string" ? payload.sub : null;
+    const role = payload?.role === "ADMIN" || payload?.role === "CLIENT" ? payload.role : null;
+    if (!sub || !role) return null;
+    return { sub, role };
   } catch {
     return null;
   }
@@ -23,10 +39,7 @@ function verifyToken(token: string): { sub: string; role: string } | null {
 
 export async function PUT(req: NextRequest) {
   try {
-    const token = extractToken(
-      req.headers.get("authorization") || req.cookies.get("sfc_token")?.value
-    );
-
+    const token = getTokenFromReq(req);
     if (!token) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
@@ -51,14 +64,11 @@ export async function PUT(req: NextRequest) {
 
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
-      // devolve erro simples (sem vazar detalhes)
       return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
     }
 
     const { currentPassword, newPassword } = parsed.data;
 
-    // (opcional) evita trocar pela mesma senha
-    // não é perfeito, mas ajuda UX
     if (currentPassword === newPassword) {
       return NextResponse.json(
         { error: "A nova senha precisa ser diferente da atual" },

@@ -3,12 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock } from "lucide-react";
-import { useAuth } from "@/auth/AuthContext";
-
-function getLocalToken() {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem("sfc_token");
-}
+import { useAuth } from "../../auth/AuthContext";
 
 export default function PerfilSegurancaPage() {
   const { user, loading, refreshMe } = useAuth();
@@ -36,7 +31,6 @@ export default function PerfilSegurancaPage() {
     return { ok: true, msg: null };
   }, [newPassword, confirmNewPassword, currentPassword]);
 
-  // Caso não esteja logado (e já terminou loading), manda pro login
   if (!loading && !user) {
     router.replace("/login");
     return null;
@@ -52,28 +46,25 @@ export default function PerfilSegurancaPage() {
       return;
     }
 
-    const token = getLocalToken();
-    if (!token) {
-      setErr("Sessão expirada. Faça login novamente.");
-      router.replace("/login");
-      return;
-    }
-
     try {
       setSubmitting(true);
 
       const res = await fetch("/api/usuarios/change-password", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
         body: JSON.stringify({
           currentPassword,
           newPassword,
           confirmNewPassword,
         }),
       });
+
+      if (res.status === 401 || res.status === 403) {
+        router.replace("/login");
+        return;
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -85,9 +76,7 @@ export default function PerfilSegurancaPage() {
       setNewPassword("");
       setConfirmNewPassword("");
 
-      // Atualiza user e libera o gate
-      if (refreshMe) await refreshMe();
-
+      await refreshMe?.();
       router.replace("/dashboard");
     } catch (e: any) {
       setErr(e?.message ?? "Erro ao atualizar senha.");
@@ -146,7 +135,11 @@ export default function PerfilSegurancaPage() {
                 disabled={submitting}
                 title={showCurr ? "Ocultar" : "Mostrar"}
               >
-                {showCurr ? <EyeOff className="w-4 h-4 text-gray-600" /> : <Eye className="w-4 h-4 text-gray-600" />}
+                {showCurr ? (
+                  <EyeOff className="w-4 h-4 text-gray-600" />
+                ) : (
+                  <Eye className="w-4 h-4 text-gray-600" />
+                )}
               </button>
             </div>
           </div>
@@ -171,7 +164,11 @@ export default function PerfilSegurancaPage() {
                 disabled={submitting}
                 title={showNew ? "Ocultar" : "Mostrar"}
               >
-                {showNew ? <EyeOff className="w-4 h-4 text-gray-600" /> : <Eye className="w-4 h-4 text-gray-600" />}
+                {showNew ? (
+                  <EyeOff className="w-4 h-4 text-gray-600" />
+                ) : (
+                  <Eye className="w-4 h-4 text-gray-600" />
+                )}
               </button>
             </div>
 
@@ -199,7 +196,11 @@ export default function PerfilSegurancaPage() {
                 disabled={submitting}
                 title={showConf ? "Ocultar" : "Mostrar"}
               >
-                {showConf ? <EyeOff className="w-4 h-4 text-gray-600" /> : <Eye className="w-4 h-4 text-gray-600" />}
+                {showConf ? (
+                  <EyeOff className="w-4 h-4 text-gray-600" />
+                ) : (
+                  <Eye className="w-4 h-4 text-gray-600" />
+                )}
               </button>
             </div>
           </div>

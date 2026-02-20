@@ -1,71 +1,96 @@
 "use client";
 
-import { WidgetScope } from "@/type/dashboard";
+import { LayoutGrid } from "lucide-react";
+import PageTitle from "@/components/Atoms/PageTitle";
+import type { DashboardView } from "@/type/dashboard";
+import ExportPrintButton from "@/components/ExportPrintButton";
+
+const SERRANO_BLUE = "#003399";
 
 type Props = {
-  scope: WidgetScope;
-  onScopeChange: (scope: WidgetScope) => void;
+  view: DashboardView;
+  onViewChange: (v: DashboardView) => void;
   onOpenPicker: () => void;
+
+  onExport: () => void;
+  exporting?: boolean;
+  exportDisabled?: boolean;
+  exportError?: string | null;
 };
 
-export function DashboardHeader({ scope, onScopeChange, onOpenPicker }: Props) {
-  return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      {/* Title */}
-      <div>
-        <div className="flex items-baseline gap-2">
-          <h1 className="text-lg font-semibold text-slate-900">Dashboard</h1>
-          <span className="text-xs text-slate-500">Visão geral</span>
+const TABS: Array<{ id: DashboardView; label: string }> = [
+  { id: "serrano", label: "Serrano" },
+  { id: "market", label: "Mercado" },
+  { id: "both", label: "Ambos" },
+  { id: "compare", label: "Comparativo" },
+];
+
+export function DashboardHeader({
+  view,
+  onViewChange,
+  onOpenPicker,
+  onExport,
+  exporting,
+  exportDisabled,
+  exportError,
+}: Props) {
+  const disabled = !!exporting || !!exportDisabled;
+
+  const actions = (
+    <div className="w-full space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* LEFT: Export */}
+        <div className="shrink-0">
+          <ExportPrintButton
+            onClick={onExport}
+            loading={!!exporting}
+            disabled={disabled}
+          />
+        </div>
+
+        {/* RIGHT: Tabs + Widgets */}
+        <div className="ml-auto flex flex-wrap items-center gap-3">
+          <div className="inline-flex w-fit rounded-xl border border-slate-200 bg-white p-1">
+            {TABS.map((t) => {
+              const active = t.id === view;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => onViewChange(t.id)}
+                  className={[
+                    "rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer",
+                    active ? "text-white" : "text-slate-700 hover:bg-slate-50",
+                  ].join(" ")}
+                  style={active ? { backgroundColor: SERRANO_BLUE } : undefined}
+                  aria-pressed={active}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={onOpenPicker}
+            className="inline-flex items-center cursor-pointer gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50"
+            title="Escolher widgets"
+            data-no-export="true"
+          >
+            <LayoutGrid size={18} />
+            Widgets
+          </button>
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center gap-2">
-        <ScopeToggle value={scope} onChange={onScopeChange} />
-
-        <button
-          onClick={onOpenPicker}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm hover:bg-slate-50"
-        >
-          Editar dashboard
-        </button>
-      </div>
+      {exportError ? (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+          Falha ao exportar: {exportError}
+        </div>
+      ) : null}
     </div>
   );
-}
 
-function ScopeToggle({
-  value,
-  onChange,
-}: {
-  value: WidgetScope;
-  onChange: (v: WidgetScope) => void;
-}) {
-  const options: { value: WidgetScope; label: string }[] = [
-    { value: "serrano", label: "Serrano" },
-    { value: "both", label: "Ambos" },
-    { value: "market", label: "Mercado" },
-  ];
-
-  return (
-    <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-      {options.map((opt) => {
-        const active = opt.value === value;
-        return (
-          <button
-            key={opt.value}
-            onClick={() => onChange(opt.value)}
-            className={[
-              "rounded-md px-3 py-1.5 text-sm transition",
-              active
-                ? "bg-slate-900 text-white"
-                : "text-slate-700 hover:bg-slate-50",
-            ].join(" ")}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
-  );
+  return <PageTitle base="Principal" title="Dashboard" actions={actions} />;
 }

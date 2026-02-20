@@ -1,14 +1,11 @@
 "use client";
 
-import { useAuth } from "@/auth/AuthContext";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { KeyRound, LogOut, Save } from "lucide-react";
 
-function getLocalToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem("sfc_token");
-}
+import PageTitle from "@/components/Atoms/PageTitle";
+import { useAuth } from "../auth/AuthContext";
 
 function initials(nome: string) {
   const p = nome.trim().split(/\s+/);
@@ -54,20 +51,23 @@ export default function ProfilePage() {
     setIsSubmitting(true);
 
     try {
-      const token = getLocalToken();
-
       const res = await fetch("/api/usuarios", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
         body: JSON.stringify({
-          id: user?.id, // compat; ideal é backend ignorar e usar decoded.sub
+          // compat: backend idealmente ignora id e usa decoded.sub
+          id: user?.id,
           name: name.trim(),
           email: email.trim(),
         }),
       });
+
+      if (res.status === 401 || res.status === 403) {
+        router.replace("/login");
+        return;
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -98,20 +98,22 @@ export default function ProfilePage() {
     setPwSubmitting(true);
 
     try {
-      const token = getLocalToken();
-
       const res = await fetch("/api/usuarios/change-password", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
         body: JSON.stringify({
           currentPassword,
           newPassword,
           confirmNewPassword,
         }),
       });
+
+      if (res.status === 401 || res.status === 403) {
+        router.replace("/login");
+        return;
+      }
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -123,6 +125,8 @@ export default function ProfilePage() {
       setNewPassword("");
       setConfirmNewPassword("");
       setTimeout(() => setPwSuccess(""), 3000);
+
+      await refreshMe?.();
     } catch (err: any) {
       setPwError(err.message || "Erro ao alterar senha");
     } finally {
@@ -130,14 +134,13 @@ export default function ProfilePage() {
     }
   }
 
-  function handleLogout() {
-    logout();
-    router.push("/login");
+  async function handleLogout() {
+    await logout();
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-gray-500">Carregando...</div>
       </div>
     );
@@ -148,58 +151,56 @@ export default function ProfilePage() {
   const displayName = user.name || user.email || "Usuário";
   const roleLabel = user.role === "ADMIN" ? "Administrador" : "Cliente";
 
+  const headerActions = (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="
+          flex items-center gap-2
+          rounded-lg border border-red-300 bg-white px-3 py-2
+          text-sm font-semibold text-red-600
+          transition-colors hover:bg-red-50
+          focus-visible:outline focus-visible:outline-[#F2CD00] focus-visible:-outline-offset-2
+          cursor-pointer
+        "
+        title="Sair"
+      >
+        <LogOut className="h-4 w-4" />
+        Sair
+      </button>
+
+      <button
+        type="submit"
+        form="profile-form"
+        disabled={isSubmitting}
+        className="
+          flex items-center gap-2
+          rounded-lg bg-[#003399] px-3 py-2
+          text-sm font-semibold text-white
+          transition-colors hover:bg-[#002774]
+          disabled:opacity-60
+          focus-visible:outline focus-visible:outline-[#F2CD00] focus-visible:-outline-offset-2
+          cursor-pointer
+        "
+        title="Salvar alterações"
+      >
+        <Save className="h-4 w-4" />
+        {isSubmitting ? "Salvando..." : "Salvar"}
+      </button>
+    </div>
+  );
+
   return (
-    <section className="p-6 max-w-6xl mx-auto">
-      {/* Header (padrão Admin pages) */}
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Perfil</h1>
-          <p className="text-sm text-gray-500">
-            Gerencie suas informações e segurança da conta.
-          </p>
-        </div>
+    <section className="mx-auto max-w-6xl p-6">
+      <PageTitle
+        base="Principal"
+        title="Perfil"
+        subtitle="Gerencie suas informações e segurança da conta."
+        actions={headerActions}
+        className="mb-6"
+      />
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="
-              flex items-center gap-2
-              rounded-lg border border-red-300 bg-white px-3 py-2
-              text-sm font-semibold text-red-600
-              transition-colors hover:bg-red-50
-              focus-visible:outline focus-visible:outline-[#F2CD00] focus-visible:-outline-offset-2
-              cursor-pointer
-            "
-            title="Sair"
-          >
-            <LogOut className="h-4 w-4" />
-            Sair
-          </button>
-
-          {/* botão salvar dispara submit do form de perfil */}
-          <button
-            type="submit"
-            form="profile-form"
-            disabled={isSubmitting}
-            className="
-              flex items-center gap-2
-              rounded-lg bg-[#003399] px-3 py-2
-              text-sm font-semibold text-white
-              transition-colors hover:bg-[#002774]
-              disabled:opacity-60
-              focus-visible:outline focus-visible:outline-[#F2CD00] focus-visible:-outline-offset-2
-              cursor-pointer
-            "
-            title="Salvar alterações"
-          >
-            <Save className="h-4 w-4" />
-            {isSubmitting ? "Salvando..." : "Salvar"}
-          </button>
-        </div>
-      </div>
-
-      {/* Alerts gerais (padrão clean, sem “indigo”) */}
       {(error || success) && (
         <div className="mb-6 space-y-2">
           {error && (
@@ -215,18 +216,15 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Layout: cards (mesma lógica de páginas do dashboard) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Card: Informações */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-gray-200 bg-white">
-          <div className="p-5 border-b border-gray-200">
+          <div className="border-b border-gray-200 p-5">
             <div className="flex items-center gap-3">
               <div
                 className="
-                  h-11 w-11 shrink-0 overflow-hidden rounded-full
+                  grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full
                   border border-[#dfe3f0]
                   bg-linear-to-br from-[#eef2ff] to-white
-                  grid place-items-center
                 "
               >
                 <span className="font-extrabold text-[#003399]">
@@ -235,10 +233,10 @@ export default function ProfilePage() {
               </div>
 
               <div className="min-w-0">
-                <div className="font-bold text-slate-900 truncate" title={displayName}>
+                <div className="truncate font-bold text-slate-900" title={displayName}>
                   {displayName}
                 </div>
-                <div className="text-xs text-gray-500 truncate" title={user.email}>
+                <div className="truncate text-xs text-gray-500" title={user.email}>
                   {user.email}
                 </div>
 
@@ -258,9 +256,9 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <form id="profile-form" onSubmit={handleSubmitProfile} className="p-5 space-y-4">
+          <form id="profile-form" onSubmit={handleSubmitProfile} className="space-y-4 p-5">
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
+              <label className="mb-2 block text-sm font-semibold text-slate-900">
                 Nome
               </label>
               <input
@@ -282,7 +280,7 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
+              <label className="mb-2 block text-sm font-semibold text-slate-900">
                 Email
               </label>
               <input
@@ -294,16 +292,13 @@ export default function ProfilePage() {
                   text-gray-500 cursor-not-allowed
                 "
               />
-              <p className="mt-1 text-xs text-gray-500">
-                Email não pode ser alterado.
-              </p>
+              <p className="mt-1 text-xs text-gray-500">Email não pode ser alterado.</p>
             </div>
           </form>
         </div>
 
-        {/* Card: Segurança */}
         <div className="rounded-2xl border border-gray-200 bg-white">
-          <div className="p-5 border-b border-gray-200">
+          <div className="border-b border-gray-200 p-5">
             <div className="flex items-center gap-2">
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#003399]/10 border border-[#003399]/15">
                 <KeyRound className="h-4 w-4 text-[#003399]" />
@@ -317,9 +312,9 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <form onSubmit={handleChangePassword} className="p-5 space-y-4">
+          <form onSubmit={handleChangePassword} className="space-y-4 p-5">
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
+              <label className="mb-2 block text-sm font-semibold text-slate-900">
                 Senha atual
               </label>
               <input
@@ -338,7 +333,7 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
+              <label className="mb-2 block text-sm font-semibold text-slate-900">
                 Nova senha
               </label>
               <input
@@ -357,7 +352,7 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">
+              <label className="mb-2 block text-sm font-semibold text-slate-900">
                 Confirmar nova senha
               </label>
               <input

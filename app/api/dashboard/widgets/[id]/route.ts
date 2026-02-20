@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { loadSerranoWidget } from "@/lib/dashboard/loaders/serrano";
 import { loadMarketWidget } from "@/lib/dashboard/loaders/market";
 import { loadOverviewWidget } from "@/lib/dashboard/loaders/overview";
+import { loadCompareWidget } from "@/lib/dashboard/loaders/compare";
 
 import type {
   WidgetApiResponse,
@@ -29,7 +30,10 @@ function parseList(sp: URLSearchParams, key: string): string[] | undefined {
 
 function readPeriod(sp: URLSearchParams): PeriodFilter | undefined {
   const from =
-    sp.get("from") ?? sp.get("periodFrom") ?? sp.get("period.from") ?? undefined;
+    sp.get("from") ??
+    sp.get("periodFrom") ??
+    sp.get("period.from") ??
+    undefined;
 
   const to =
     sp.get("to") ?? sp.get("periodTo") ?? sp.get("period.to") ?? undefined;
@@ -84,7 +88,11 @@ function readFilters(req: NextRequest): WidgetFilters | undefined {
 /* -----------------------------
  * Helpers
  * ----------------------------- */
-function empty(widgetId: string, reason: string, hint?: string): WidgetApiResponse {
+function empty(
+  widgetId: string,
+  reason: string,
+  hint?: string,
+): WidgetApiResponse {
   return {
     ok: true,
     widgetId: widgetId as WidgetId,
@@ -102,7 +110,7 @@ function getOrigin(req: NextRequest) {
  * ----------------------------- */
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id?: string }> }
+  { params }: { params: Promise<{ id?: string }> },
 ) {
   let widgetIdStr = "unknown";
 
@@ -113,15 +121,20 @@ export async function GET(
 
     if (!id || typeof id !== "string") {
       return NextResponse.json(
-        empty("unknown", "Parâmetro de widget ausente/ inválido.", "params.id veio vazio"),
-        { status: 200 }
+        empty(
+          "unknown",
+          "Parâmetro de widget ausente/ inválido.",
+          "params.id veio vazio",
+        ),
+        { status: 200 },
       );
     }
 
     widgetIdStr = id;
     const widgetId = id as WidgetId;
 
-    const scope = (req.nextUrl.searchParams.get("scope") ?? "both") as WidgetScope;
+    const scope = (req.nextUrl.searchParams.get("scope") ??
+      "both") as WidgetScope;
     const filters = readFilters(req);
     const origin = getOrigin(req);
 
@@ -136,7 +149,10 @@ export async function GET(
     // -------------------------
     // SERRANO (inclui kpi.serrano.*)
     // -------------------------
-    if (widgetId.startsWith("serrano.") || widgetId.startsWith("kpi.serrano.")) {
+    if (
+      widgetId.startsWith("serrano.") ||
+      widgetId.startsWith("kpi.serrano.")
+    ) {
       const res = await loadSerranoWidget(widgetId, filters);
       return NextResponse.json(res, { status: 200 });
     }
@@ -148,7 +164,7 @@ export async function GET(
       if (scope === "serrano") {
         return NextResponse.json(
           empty(widgetId, "Widget não aplicável ao escopo Serrano."),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -157,13 +173,11 @@ export async function GET(
     }
 
     // -------------------------
-    // COMPARE (MVP desligado)
+    // COMPARE
     // -------------------------
     if (widgetId.startsWith("compare.")) {
-      return NextResponse.json(
-        empty(widgetId, "Widgets comparativos ainda não habilitados."),
-        { status: 200 }
-      );
+      const res = await loadCompareWidget(widgetId, filters);
+      return NextResponse.json(res, { status: 200 });
     }
 
     // -------------------------
@@ -176,7 +190,7 @@ export async function GET(
     console.error("Dashboard widget route error", err);
     return NextResponse.json(
       empty(widgetIdStr, "Erro interno ao carregar widget.", err?.message),
-      { status: 200 }
+      { status: 200 },
     );
   }
 }

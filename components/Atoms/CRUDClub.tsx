@@ -4,21 +4,37 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminButton from "@/components/Atoms/AdminButton";
 import SuccessDialog from "@/components/Atoms/SuccessDialog";
-import { Save, ArrowLeft } from "lucide-react";
+import ImageUploadButton from "@/components/Atoms/ImageUploadButton";
+import PageTitle from "@/components/Atoms/PageTitle";
+import {
+  COUNTRY_OPTIONS,
+  CONTINENT_OPTIONS,
+  BR_STATES,
+} from "@/lib/dashboard/geoOptions";
+import {
+  Save,
+  ArrowLeft,
+  Link as LinkIcon,
+  Upload as UploadIcon,
+  Image as ImageIcon,
+  X,
+} from "lucide-react";
 
 type ClubFormState = {
   nome: string;
   logoUrl: string;
 
-  countryCode: string; // BR, PT, HR...
-  countryName: string; // Brasil, Portugal...
-  continentCode: string; // SA, EU...
+  countryCode: string;
+  countryName: string;
+  continentCode: string;
 
-  stateCode: string; // SP, RJ... (apenas BR)
-  stateName: string; // São Paulo... (apenas BR)
+  stateCode: string;
+  stateName: string;
 
   city: string;
 };
+
+type LogoMode = "url" | "upload";
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -34,72 +50,21 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
     } catch {}
     throw new Error(msg);
   }
-  return res.json() as Promise<T>;
+
+  if (res.status === 204) return undefined as T;
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
-
-/** Lista curta pro “usuário médio” não errar. Pode expandir depois. */
-const COUNTRY_OPTIONS = [
-  { code: "BR", name: "Brasil", continent: "SA" },
-  { code: "PT", name: "Portugal", continent: "EU" },
-  { code: "HR", name: "Croácia", continent: "EU" },
-  { code: "ES", name: "Espanha", continent: "EU" },
-  { code: "IT", name: "Itália", continent: "EU" },
-  { code: "FR", name: "França", continent: "EU" },
-  { code: "DE", name: "Alemanha", continent: "EU" },
-  { code: "NL", name: "Holanda", continent: "EU" },
-  { code: "BE", name: "Bélgica", continent: "EU" },
-  { code: "GB", name: "Reino Unido", continent: "EU" },
-  { code: "US", name: "Estados Unidos", continent: "NA" },
-  { code: "AR", name: "Argentina", continent: "SA" },
-  { code: "UY", name: "Uruguai", continent: "SA" },
-  { code: "CL", name: "Chile", continent: "SA" },
-];
-
-const CONTINENT_OPTIONS = [
-  { code: "SA", name: "América do Sul" },
-  { code: "NA", name: "América do Norte" },
-  { code: "EU", name: "Europa" },
-  { code: "AF", name: "África" },
-  { code: "AS", name: "Ásia" },
-  { code: "OC", name: "Oceania" },
-];
-
-/** UF -> nome (o suficiente pra não virar texto livre) */
-const BR_STATES: Array<{ code: string; name: string }> = [
-  { code: "AC", name: "Acre" },
-  { code: "AL", name: "Alagoas" },
-  { code: "AP", name: "Amapá" },
-  { code: "AM", name: "Amazonas" },
-  { code: "BA", name: "Bahia" },
-  { code: "CE", name: "Ceará" },
-  { code: "DF", name: "Distrito Federal" },
-  { code: "ES", name: "Espírito Santo" },
-  { code: "GO", name: "Goiás" },
-  { code: "MA", name: "Maranhão" },
-  { code: "MT", name: "Mato Grosso" },
-  { code: "MS", name: "Mato Grosso do Sul" },
-  { code: "MG", name: "Minas Gerais" },
-  { code: "PA", name: "Pará" },
-  { code: "PB", name: "Paraíba" },
-  { code: "PR", name: "Paraná" },
-  { code: "PE", name: "Pernambuco" },
-  { code: "PI", name: "Piauí" },
-  { code: "RJ", name: "Rio de Janeiro" },
-  { code: "RN", name: "Rio Grande do Norte" },
-  { code: "RS", name: "Rio Grande do Sul" },
-  { code: "RO", name: "Rondônia" },
-  { code: "RR", name: "Roraima" },
-  { code: "SC", name: "Santa Catarina" },
-  { code: "SP", name: "São Paulo" },
-  { code: "SE", name: "Sergipe" },
-  { code: "TO", name: "Tocantins" },
-];
 
 function upper(v: string) {
-  return v.trim().toUpperCase();
+  return (v ?? "").trim().toUpperCase();
 }
 function clean(v: string) {
-  return v.trim();
+  return (v ?? "").trim();
+}
+function cn(...xs: Array<string | false | null | undefined>) {
+  return xs.filter(Boolean).join(" ");
 }
 
 export default function CRUDClub({
@@ -116,12 +81,22 @@ export default function CRUDClub({
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  const [logoMode, setLogoMode] = useState<LogoMode>(
+    initial.logoUrl ? "url" : "upload",
+  );
+
   const isBR = useMemo(() => upper(form.countryCode) === "BR", [form.countryCode]);
 
   const countryPreset = useMemo(() => {
     const cc = upper(form.countryCode);
     return COUNTRY_OPTIONS.find((c) => c.code === cc) ?? null;
   }, [form.countryCode]);
+
+  const pageTitle = mode === "create" ? "Novo clube" : "Editar clube";
+  const subtitle =
+    mode === "create"
+      ? "Cadastre um novo clube e padronize país/estado para o mapa funcionar certo."
+      : "Atualize os dados do clube e mantenha país/estado padronizados para o mapa.";
 
   function set<K extends keyof ClubFormState>(key: K, value: ClubFormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -156,7 +131,6 @@ export default function CRUDClub({
 
     const cc = upper(form.countryCode);
     if (!cc) return "Selecione um país.";
-    if (cc === "__OTHER__") return "Selecione um país válido (ou preencha manualmente corretamente).";
     if (!clean(form.countryName)) return "Nome do país é obrigatório.";
 
     if (!upper(form.continentCode)) return "Selecione um continente.";
@@ -169,6 +143,12 @@ export default function CRUDClub({
     return null;
   }
 
+  function switchLogoMode(next: LogoMode) {
+    if (next === logoMode) return;
+    setLogoMode(next);
+    set("logoUrl", ""); // exclusividade
+  }
+
   async function onSave() {
     const err = validate();
     if (err) return alert(err);
@@ -177,9 +157,12 @@ export default function CRUDClub({
     try {
       const cc = upper(form.countryCode);
 
+      // manda string pra não bater no teu Zod atual
+      const logoUrlStr = clean(form.logoUrl);
+
       const payload = {
         nome: clean(form.nome),
-        logoUrl: clean(form.logoUrl) || null,
+        logoUrl: logoUrlStr, // "" ou URL
 
         countryCode: cc,
         countryName: clean(form.countryName),
@@ -194,7 +177,10 @@ export default function CRUDClub({
         await api("/api/clubs", { method: "POST", body: JSON.stringify(payload) });
         setSuccessMsg("Clube cadastrado com sucesso.");
       } else {
-        await api(`/api/clubs/${clubId}`, { method: "PATCH", body: JSON.stringify(payload) });
+        await api(`/api/clubs/${clubId}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
         setSuccessMsg("Clube atualizado com sucesso.");
       }
     } catch (e: any) {
@@ -203,6 +189,23 @@ export default function CRUDClub({
       setSaving(false);
     }
   }
+
+  const hasLogo = !!clean(form.logoUrl);
+
+  const headerActions = (
+    <div className="flex gap-2">
+      <AdminButton label="Voltar" icon={ArrowLeft} href="/admin/clubes" />
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={saving}
+        className="inline-flex items-center gap-2 rounded-xl bg-[#F2CD00] px-4 py-2 font-semibold text-black hover:brightness-95 disabled:opacity-60"
+      >
+        <Save className="h-4 w-4" />
+        {saving ? "Salvando..." : "Salvar"}
+      </button>
+    </div>
+  );
 
   return (
     <>
@@ -220,7 +223,6 @@ export default function CRUDClub({
         onSecondary={() => {
           setSuccessMsg(null);
           if (mode === "create") {
-            // mantém defaults de localização e limpa o resto
             setForm((prev) => ({
               ...prev,
               nome: "",
@@ -229,69 +231,167 @@ export default function CRUDClub({
               stateCode: upper(prev.countryCode) === "BR" ? "" : "",
               stateName: upper(prev.countryCode) === "BR" ? "" : "",
             }));
+            setLogoMode("upload");
           } else {
             router.refresh();
           }
         }}
       />
 
-      <section className="p-6 max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold">
-            Admin → Clubes → {mode === "create" ? "Novo" : "Editar"}
-          </h1>
+      <section className="mx-auto w-full max-w-6xl bg-gray-50 p-6">
+        <PageTitle
+          base="Admin"
+          title={pageTitle}
+          subtitle={subtitle}
+          actions={headerActions}
+          className="mb-6"
+          crumbLabel="Clubes"
+        />
 
-          <div className="flex gap-2">
-            <AdminButton label="Voltar" icon={ArrowLeft} href="/admin/clubes" />
-            <button
-              type="button"
-              onClick={onSave}
-              disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2 font-semibold bg-[#F2CD00] text-black hover:brightness-95 disabled:opacity-60"
-            >
-              <Save className="w-4 h-4" />
-              {saving ? "Salvando..." : "Salvar"}
-            </button>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-6">
+        <div className="space-y-6 rounded-2xl border border-gray-200 bg-white p-5">
           {/* Dados básicos */}
           <div>
-            <div className="text-sm font-semibold text-gray-700 mb-3">Dados do clube</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mb-3 text-sm font-semibold text-gray-700">Dados do clube</div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field label="Nome">
                 <input
-                  className="w-full border rounded-xl px-3 py-2"
+                  className="w-full rounded-xl border px-3 py-2 outline-none focus:border-black/30 focus:ring-2 focus:ring-black/10"
                   value={form.nome}
                   onChange={(e) => set("nome", e.target.value)}
                   placeholder="Ex: Flamengo"
                 />
               </Field>
 
-              <Field label="Logo URL (opcional)">
-                <input
-                  className="w-full border rounded-xl px-3 py-2"
-                  value={form.logoUrl}
-                  onChange={(e) => set("logoUrl", e.target.value)}
-                  placeholder="https://..."
-                />
-              </Field>
+              {/* ===== BLOCO LOGO (BONITINHO) ===== */}
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-semibold text-gray-700">Logo</label>
+
+                <div className="rounded-2xl border border-gray-200 bg-gray-50/60 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                        <ImageIcon className="h-4 w-4" />
+                        Link ou Upload
+                      </div>
+                      <div className="mt-0.5 text-xs text-gray-500">
+                        Escolha apenas 1 método. Ao trocar, o outro é limpo.
+                      </div>
+                    </div>
+
+                    {/* preview compacto consistente */}
+                    <div className="flex-none">
+                      <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-xl border border-gray-200 bg-white">
+                        {hasLogo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={form.logoUrl}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="px-1 text-center text-[10px] leading-tight text-gray-400">
+                            sem
+                            <br />
+                            logo
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* toggle estilo segmented */}
+                  <div className="mt-3 inline-flex rounded-xl border border-gray-200 bg-white p-1">
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => switchLogoMode("url")}
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition",
+                        logoMode === "url"
+                          ? "bg-black text-white"
+                          : "text-gray-700 hover:bg-gray-50",
+                      )}
+                    >
+                      <LinkIcon className="h-4 w-4" />
+                      Link
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => switchLogoMode("upload")}
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition",
+                        logoMode === "upload"
+                          ? "bg-black text-white"
+                          : "text-gray-700 hover:bg-gray-50",
+                      )}
+                    >
+                      <UploadIcon className="h-4 w-4" />
+                      Upload
+                    </button>
+                  </div>
+
+                  <div className="mt-3">
+                    {logoMode === "url" ? (
+                      <div className="space-y-2">
+                        <input
+                          className="w-full rounded-xl border bg-white px-3 py-2 outline-none focus:border-black/30 focus:ring-2 focus:ring-black/10"
+                          value={form.logoUrl}
+                          onChange={(e) => set("logoUrl", e.target.value)}
+                          placeholder="Cole um link de imagem (https://...)"
+                          disabled={saving}
+                        />
+
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="truncate text-xs text-gray-500">
+                            {hasLogo ? form.logoUrl : "Nenhum link definido"}
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={saving || !hasLogo}
+                            onClick={() => set("logoUrl", "")}
+                            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-800 hover:bg-gray-50 disabled:opacity-60"
+                            title="Limpar logo"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            Limpar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <ImageUploadButton
+                        label="Upload do logo"
+                        helperText="PNG/JPG — envia para o Cloudinary e salva a URL no clube."
+                        valueUrl={form.logoUrl || undefined}
+                        disabled={saving}
+                        onUploaded={(r) => set("logoUrl", r.secureUrl)}
+                        onClear={() => set("logoUrl", "")}
+                        className="mt-1"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+              {/* ===== /BLOCO LOGO ===== */}
             </div>
           </div>
 
           {/* Localização */}
           <div className="border-t pt-5">
-            <div className="text-sm font-semibold text-gray-700 mb-3">
+            <div className="mb-3 text-sm font-semibold text-gray-700">
               Localização (para o mapa)
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <Field label="País">
                 <select
-                  className="w-full border rounded-xl px-3 py-2 bg-white"
+                  className="w-full rounded-xl border bg-white px-3 py-2 outline-none focus:border-black/30 focus:ring-2 focus:ring-black/10"
                   value={upper(form.countryCode) || ""}
                   onChange={(e) => onPickCountry(e.target.value)}
+                  disabled={saving}
                 >
                   <option value="" disabled>
                     Selecione...
@@ -302,28 +402,30 @@ export default function CRUDClub({
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="mt-1 text-xs text-gray-500">
                   Use a lista para evitar siglas erradas.
                 </p>
               </Field>
 
               <Field label="Nome do país">
                 <input
-                  className="w-full border rounded-xl px-3 py-2"
+                  className="w-full rounded-xl border px-3 py-2 outline-none focus:border-black/30 focus:ring-2 focus:ring-black/10"
                   value={form.countryName}
                   onChange={(e) => set("countryName", e.target.value)}
-                  placeholder={countryPreset?.name ?? "Ex: Brasil"}
+                  placeholder={countryPreset?.name ?? "Ex: Portugal"}
+                  disabled={saving}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="mt-1 text-xs text-gray-500">
                   Evita variações tipo BR/Brasil/BRA.
                 </p>
               </Field>
 
               <Field label="Continente">
                 <select
-                  className="w-full border rounded-xl px-3 py-2 bg-white"
+                  className="w-full rounded-xl border bg-white px-3 py-2 outline-none focus:border-black/30 focus:ring-2 focus:ring-black/10"
                   value={upper(form.continentCode) || ""}
                   onChange={(e) => set("continentCode", e.target.value)}
+                  disabled={saving}
                 >
                   <option value="" disabled>
                     Selecione...
@@ -334,26 +436,27 @@ export default function CRUDClub({
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="mt-1 text-xs text-gray-500">
                   Auto preenche por país, mas você pode ajustar.
                 </p>
               </Field>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
               <Field label="Cidade (opcional)">
                 <input
-                  className="w-full border rounded-xl px-3 py-2"
+                  className="w-full rounded-xl border px-3 py-2 outline-none focus:border-black/30 focus:ring-2 focus:ring-black/10"
                   value={form.city}
                   onChange={(e) => set("city", e.target.value)}
-                  placeholder="Ex: Rio de Janeiro"
+                  placeholder="Ex: Madrid"
+                  disabled={saving}
                 />
               </Field>
 
               <Field label="Estado (UF) — só Brasil">
                 <select
-                  className="w-full border rounded-xl px-3 py-2 bg-white disabled:bg-gray-50"
-                  disabled={!isBR}
+                  className="w-full rounded-xl border bg-white px-3 py-2 outline-none focus:border-black/30 focus:ring-2 focus:ring-black/10 disabled:bg-gray-50"
+                  disabled={!isBR || saving}
                   value={upper(form.stateCode) || ""}
                   onChange={(e) => onPickState(e.target.value)}
                 >
@@ -367,7 +470,7 @@ export default function CRUDClub({
                   ))}
                 </select>
                 {!isBR && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="mt-1 text-xs text-gray-500">
                     Fora do BR, estado fica vazio.
                   </p>
                 )}
@@ -375,13 +478,13 @@ export default function CRUDClub({
 
               <Field label="Nome do estado (auto)">
                 <input
-                  className="w-full border rounded-xl px-3 py-2 disabled:bg-gray-50"
-                  disabled={!isBR}
+                  className="w-full rounded-xl border px-3 py-2 outline-none focus:border-black/30 focus:ring-2 focus:ring-black/10 disabled:bg-gray-50"
+                  disabled={!isBR || saving}
                   value={form.stateName}
                   onChange={(e) => set("stateName", e.target.value)}
                   placeholder={isBR ? "Ex: São Paulo" : "—"}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="mt-1 text-xs text-gray-500">
                   Preenche automático pelo select da UF.
                 </p>
               </Field>

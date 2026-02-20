@@ -36,3 +36,24 @@
 .input {
   @apply w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-[#003399] focus:ring-1 focus:ring-[#003399] bg-white;
 }
+
+body[data-exporting="true"],
+html:has(body[data-exporting="true"]) {
+  overflow: visible !important;
+}
+
+/* wrappers que você marcou */
+body[data-exporting="true"] [data-export-scroll="true"] {
+  overflow: visible !important;
+}
+
+/* esconde scrollbar no export (Chrome/Edge) */
+body[data-exporting="true"] *::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Firefox */
+body[data-exporting="true"] * {
+  scrollbar-width: none !important;
+}

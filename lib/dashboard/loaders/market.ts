@@ -447,7 +447,7 @@ export async function loadMarketTopLeaguesCountries(
       };
     }
 
-    // ✅ só 1 chave numérica: "deals" (evita o renderer pegar label errado)
+    //  só 1 chave numérica: "deals" (evita o renderer pegar label errado)
     const data: BarDatum[] = rows.map((r) => ({
       label: safeStr(r.label),
       deals: r.deals,

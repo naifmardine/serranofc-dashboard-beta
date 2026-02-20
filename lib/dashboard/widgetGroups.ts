@@ -12,8 +12,6 @@ export const WIDGET_GROUPS: WidgetGroup[] = [
   "serrano",
   "market",
   "compare",
-  "finance",
-  "performance",
 ];
 
 export const WIDGET_GROUP_LABEL: Record<WidgetGroup, string> = {
@@ -21,8 +19,6 @@ export const WIDGET_GROUP_LABEL: Record<WidgetGroup, string> = {
   serrano: "Serrano",
   market: "Mercado",
   compare: "Comparativos",
-  finance: "Financeiro",
-  performance: "Performance",
 };
 
 /**
@@ -35,8 +31,6 @@ export const WIDGET_GROUP_ORDER: WidgetGroup[] = [
   "serrano",
   "market",
   "compare",
-  "finance",
-  "performance",
 ];
 
 /**
@@ -53,9 +47,7 @@ export function groupAllowedByScope(
     return (
       group === "overview" ||
       group === "serrano" ||
-      group === "compare" ||
-      group === "finance" ||
-      group === "performance"
+      group === "compare"
     );
   }
 
@@ -63,8 +55,7 @@ export function groupAllowedByScope(
     return (
       group === "overview" ||
       group === "market" ||
-      group === "compare" ||
-      group === "finance"
+      group === "compare"
     );
   }
 

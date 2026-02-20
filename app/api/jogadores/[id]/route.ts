@@ -61,7 +61,7 @@ export async function PATCH(
   try {
     const body = await request.json().catch(() => ({}));
 
-    // ✅ contrato atual: sem "clube" (string) e sem "variacaoPct"
+    //  contrato atual: sem "clube" (string) e sem "variacaoPct"
     const {
       nome,
       idade,
@@ -109,7 +109,7 @@ export async function PATCH(
       selecao,
       statsPorTemporada,
 
-      // ✅ FK do clube
+      //  FK do clube
       clubeId,
     } = body ?? {};
 
@@ -161,7 +161,7 @@ export async function PATCH(
       ...(statsPorTemporada !== undefined && { statsPorTemporada }),
     };
 
-    // ✅ aplica clubeId (com validação)
+    //  aplica clubeId (com validação)
     if (clubeId !== undefined) {
       const nextClubeId = clubeId ? String(clubeId) : null;
 
