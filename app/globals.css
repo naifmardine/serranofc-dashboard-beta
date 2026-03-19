@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@source "../app/**/*.{ts,tsx}";
+@source "../components/**/*.{ts,tsx}";
 
 /* valor padrão da sidebar (expandida) pra evitar o "flash" */
 :root {

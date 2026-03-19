@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "app/api/chatbot/chat/route.ts": {
+      "maxDuration": 150
+    },
+    "app/api/chatbot/upload/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
