@@ -34,11 +34,11 @@ function normalizeUpstream(body: ChatRequest, data: any) {
 export async function POST(req: Request) {
   const baseUrl =
     process.env.SERRANO_CHATBOT_BASE_URL?.trim() ?? "http://127.0.0.1:8001";
-  const key = process.env.SERRANO_INTERNAL_API_KEY?.trim();
+  const key = process.env.INTERNAL_API_KEY?.trim();
 
   if (!key) {
     return NextResponse.json(
-      { error: "Missing SERRANO_INTERNAL_API_KEY" },
+      { error: "Missing INTERNAL_API_KEY" },
       { status: 500 },
     );
   }

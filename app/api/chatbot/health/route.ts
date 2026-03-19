@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   const baseUrl = process.env.SERRANO_CHATBOT_BASE_URL ?? "http://127.0.0.1:8001";
-  const key = process.env.SERRANO_INTERNAL_API_KEY;
+  const key = process.env.INTERNAL_API_KEY;
 
   if (!key) {
-    return NextResponse.json({ error: "Missing SERRANO_INTERNAL_API_KEY" }, { status: 500 });
+    return NextResponse.json({ error: "Missing INTERNAL_API_KEY" }, { status: 500 });
   }
 
   // Debug seguro: tamanho + primeiros/últimos chars
