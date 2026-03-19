@@ -16,6 +16,9 @@ model User {
   createdAt    DateTime @default(now())
 
   mustChangePassword Boolean @default(false)
+
+  conversations ChatConversation[]
+  reports       Report[]
 }
 
 model Club {
@@ -44,6 +47,7 @@ model Club {
 model Player {
   id                 String    @id @default(uuid())
   nome               String
+  cpf String? @db.VarChar(11)
   idade              Int
   posicao            String
   peDominante        String
@@ -121,4 +125,47 @@ model Transferencia {
 enum Role {
   ADMIN
   CLIENT
+}
+
+// ============================================================
+// Chat persistence — isolated from football data models
+// ============================================================
+
+model ChatConversation {
+  id        String        @id @default(cuid())
+  title     String
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+  reports   Report[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([userId])
+}
+
+model ChatMessage {
+  id             String           @id @default(cuid())
+  conversationId String
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String           // "user" | "assistant"
+  content        String           @db.Text
+  toolTraces     Json?
+  attachments    Json?
+  createdAt      DateTime         @default(now())
+
+  @@index([conversationId])
+}
+
+model Report {
+  id             String            @id @default(cuid())
+  title          String
+  content        String            @db.Text
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId String?
+  conversation   ChatConversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  createdAt      DateTime          @default(now())
+
+  @@index([userId])
 }

@@ -11,10 +11,9 @@ type ExportPdfParams = {
   marginMm?: number;
   scale?: number;
 
-  // não cortar card/row (marque os blocos com data-pdf-block="true")
+  // marque blocos com data-pdf-block="true" quando quiser sugerir pontos de quebra
   blockSelector?: string;
 
-  // header/footer (por página)
   header?: {
     title: string;
     subtitle?: string;
@@ -26,11 +25,14 @@ type ExportPdfParams = {
   };
 };
 
+type ImgSize = { w: number; h: number };
+
+const SERRANO_BLUE = "#003399";
+const SERRANO_YELLOW = "#F2CD00";
+
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
-
-type ImgSize = { w: number; h: number };
 
 async function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -50,26 +52,24 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
           .map((c) => c + c)
           .join("")
       : clean;
+
   const n = parseInt(full, 16);
   return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
 }
 
-const SERRANO_BLUE = "#003399";
-const SERRANO_YELLOW = "#F2CD00";
+function isRenderableElement(node: HTMLElement, root: HTMLElement) {
+  if (!root.contains(node)) return false;
+  if (node.dataset?.noExport === "true") return false;
+  if (node.offsetParent === null) return false;
 
-/**
- * Causa real do “último item cortado”:
- * - NÃO é o page break.
- * - É o html-to-image capturando o node com altura efetiva menor (client rect / overflow),
- *   então o PNG já nasce “curto” no fim — daí a última row/card fica truncada.
- *
- * Correção: durante o toPng, forçar:
- * - height/width explícitos (scrollHeight/scrollWidth)
- * - overflow visível
- * - um padding-bottom extra só no snapshot (não mexe na UI)
- *
- * Ajuste fino: EXPORT_BOTTOM_PAD_PX
- */
+  const rect = node.getBoundingClientRect();
+  return rect.height > 0 && rect.width > 0;
+}
+
+function uniqueElements(nodes: HTMLElement[]) {
+  return Array.from(new Set(nodes));
+}
+
 export function useDashboardPdfExport() {
   const exportRef = useRef<HTMLDivElement | null>(null);
 
@@ -87,7 +87,6 @@ export function useDashboardPdfExport() {
 
       setExporting(true);
       setError(null);
-
       document.body.dataset.exporting = "true";
 
       try {
@@ -102,72 +101,111 @@ export function useDashboardPdfExport() {
         const header = params?.header;
         const footer = params?.footer;
 
-        // reserva fixa no layout do PDF (mm)
         const headerMm = header ? 12 : 0;
         const footerMm = footer ? 10 : 0;
 
-        // ===== tweak knobs (onde você mexe fino) =====
-        const CUT_PAD_PX = 44; // respiro entre páginas (anti “comer padding” no seam)
-        const PAGE_GUARD_PX = 10; // não quebrar colado no fim
+        // knobs
+        const CUT_PAD_PX = 44;
+        const PAGE_GUARD_PX = 10;
         const EPS_PX = 0;
         const MIN_ADVANCE_PX = 60;
-
-        // >>> ESTE É O AJUSTE DO “ÚLTIMO DO ÚLTIMO” <<<
-        // aumenta para 72/96 se ainda truncar 1-2px no final.
         const EXPORT_BOTTOM_PAD_PX = 72;
 
-        // ===== 1) quebra segura por blocos (DOM px) =====
-        const primarySelector = params?.blockSelector ?? `[data-pdf-block="true"]`;
-        let blocks = Array.from(el.querySelectorAll(primarySelector)) as HTMLElement[];
+        // só usa corte inteligente se o corte não cair cedo demais na página
+        const MIN_SMART_CUT_COVERAGE = 0.45;
 
+        const exportW = Math.max(1, el.scrollWidth || el.clientWidth);
+        const exportH = Math.max(1, el.scrollHeight || el.clientHeight);
+
+        // ===== 1) descobrir pontos de quebra =====
+        const primarySelector = params?.blockSelector ?? `[data-pdf-block="true"]`;
+
+        let blocks = Array.from(
+          el.querySelectorAll(primarySelector)
+        ) as HTMLElement[];
+
+        blocks = blocks.filter((node) => isRenderableElement(node, el));
+
+        // Para relatórios, normalmente existem poucos blocos grandes.
+        // Se houver poucos, enriquecemos com elementos textuais para achar quebras melhores.
+        if (blocks.length < 4) {
+          const textFlowBlocks = Array.from(
+            el.querySelectorAll(
+              [
+                "h1",
+                "h2",
+                "h3",
+                "h4",
+                "p",
+                "li",
+                "table",
+                "blockquote",
+                "pre",
+                "hr",
+              ].join(",")
+            )
+          ) as HTMLElement[];
+
+          blocks = uniqueElements([...blocks, ...textFlowBlocks]).filter((node) =>
+            isRenderableElement(node, el)
+          );
+        }
+
+        // fallback genérico, bom para dashboards/tabelas/cartões
         if (blocks.length < 2) {
           const fallback = Array.from(
-            el.querySelectorAll("tr[data-pdf-block], tr, article, [data-card]"),
+            el.querySelectorAll(
+              "tr[data-pdf-block], tr, article, [data-card], section, .card"
+            )
           ) as HTMLElement[];
-          blocks = fallback.filter((node) => el.contains(node) && node.offsetParent !== null);
+
+          blocks = fallback.filter((node) => isRenderableElement(node, el));
         }
 
         const containerRect = el.getBoundingClientRect();
 
-        const bottomsDom = blocks
+        // coleta tops E bottoms de cada bloco — tops são usados como fallback de corte
+        const posEntries = blocks
           .map((b) => {
             const r = b.getBoundingClientRect();
-            const bottomRel = r.bottom - containerRect.top;
-            return Math.max(0, Math.round(bottomRel));
+            return {
+              top: Math.max(0, Math.round(r.top - containerRect.top)),
+              bottom: Math.max(0, Math.round(r.bottom - containerRect.top)),
+            };
           })
-          .filter((n) => Number.isFinite(n) && n > 0)
-          .sort((a, b) => a - b);
+          .filter(({ bottom }) => Number.isFinite(bottom) && bottom > 0 && bottom <= exportH + 2);
 
+        const rawBottoms = posEntries.map((e) => e.bottom).sort((a, b) => a - b);
         const uniqBottomsDom: number[] = [];
-        for (const y of bottomsDom) {
+        for (const y of rawBottoms) {
           const last = uniqBottomsDom[uniqBottomsDom.length - 1];
           if (last == null || Math.abs(y - last) > 2) uniqBottomsDom.push(y);
         }
 
-        // ===== 2) DOM -> PNG (fixando a causa do truncamento) =====
-        // Força dimensões reais do conteúdo exportável.
-        // (Se existir qualquer overflow/scroll interno, isso evita “cortar” o final no PNG)
-        const exportW = Math.max(1, el.scrollWidth || el.clientWidth);
-        const exportH = Math.max(1, el.scrollHeight || el.clientHeight);
+        const rawTops = posEntries
+          .map((e) => e.top)
+          .filter((t) => t > 0)
+          .sort((a, b) => a - b);
+        const uniqTopsDom: number[] = [];
+        for (const y of rawTops) {
+          const last = uniqTopsDom[uniqTopsDom.length - 1];
+          if (last == null || Math.abs(y - last) > 2) uniqTopsDom.push(y);
+        }
 
+        // ===== 2) gerar PNG do conteúdo inteiro =====
         const png = await toPng(el, {
           cacheBust: true,
           backgroundColor: "#ffffff",
           pixelRatio: scale,
-
-          // CRÍTICO: capturar o conteúdo inteiro
           width: exportW,
           height: exportH + EXPORT_BOTTOM_PAD_PX,
-
-          // CRÍTICO: neutraliza overflow/limites só no snapshot
           style: {
             overflow: "visible",
             maxHeight: "none",
-            height: `${exportH + EXPORT_BOTTOM_PAD_PX}px`,
             width: `${exportW}px`,
+            height: `${exportH + EXPORT_BOTTOM_PAD_PX}px`,
             paddingBottom: `${EXPORT_BOTTOM_PAD_PX}px`,
           },
-
           filter: (node) => {
             if (!(node instanceof HTMLElement)) return true;
             if (node.dataset?.noExport === "true") return false;
@@ -178,16 +216,32 @@ export function useDashboardPdfExport() {
         const img = await loadImage(png);
         const imgSize: ImgSize = { w: img.naturalWidth, h: img.naturalHeight };
 
-        // DOM px -> IMG px
-        const domHeight = Math.max(1, exportH + EXPORT_BOTTOM_PAD_PX);
-        const scaleY = imgSize.h / domHeight;
+        // DOM -> PNG scale
+        const domSnapshotH = exportH + EXPORT_BOTTOM_PAD_PX;
+        const scaleY = imgSize.h / domSnapshotH;
+
+        // fim real do conteúdo: ignora o padding artificial na paginação
+        const contentBottomDom = Math.max(
+          exportH,
+          uniqBottomsDom[uniqBottomsDom.length - 1] ?? 0
+        );
+        const contentBottomImg = Math.min(
+          imgSize.h,
+          Math.round(contentBottomDom * scaleY)
+        );
 
         const bottomsImg = uniqBottomsDom
           .map((y) => Math.round(y * scaleY))
-          .filter((y) => y > 0 && y < imgSize.h)
+          .filter((y) => y > 0 && y < contentBottomImg)
           .sort((a, b) => a - b);
 
-        // ===== 3) PDF + paginação por slices =====
+        // tops em coordenadas de imagem (fallback para corte antes do elemento)
+        const topsImg = uniqTopsDom
+          .map((y) => Math.round(y * scaleY))
+          .filter((y) => y > 0 && y < contentBottomImg)
+          .sort((a, b) => a - b);
+
+        // ===== 3) preparar PDF =====
         const pdf = new jsPDF({ orientation, unit: "mm", format });
 
         const pageW = pdf.internal.pageSize.getWidth();
@@ -198,7 +252,7 @@ export function useDashboardPdfExport() {
 
         const imgWmm = usableW;
         const pxPerMm = imgSize.w / imgWmm;
-        const pagePxH = Math.floor(usableH * pxPerMm) - 1;
+        const pagePxH = Math.max(1, Math.floor(usableH * pxPerMm) - 1);
 
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
@@ -267,14 +321,13 @@ export function useDashboardPdfExport() {
           }
         };
 
+        // ===== 4) fatiar imagem =====
         const slices: Array<{ dataUrl: string; sliceH: number }> = [];
-
         let y = 0;
 
-        while (y < imgSize.h - 2) {
-          const remaining = imgSize.h - y;
+        while (y < contentBottomImg - 2) {
+          const remaining = contentBottomImg - y;
 
-          // última fatia: pega o resto completo (sem inventar regra)
           if (remaining <= pagePxH + EPS_PX) {
             const sliceH = remaining;
 
@@ -283,31 +336,66 @@ export function useDashboardPdfExport() {
 
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
             ctx.drawImage(img, 0, y, imgSize.w, sliceH, 0, 0, imgSize.w, sliceH);
 
-            slices.push({ dataUrl: canvas.toDataURL("image/jpeg", 0.92), sliceH });
+            slices.push({
+              dataUrl: canvas.toDataURL("image/jpeg", 0.92),
+              sliceH,
+            });
             break;
           }
 
-          const pageEnd = Math.min(imgSize.h, y + pagePxH);
-
+          const pageEnd = Math.min(contentBottomImg, y + pagePxH);
           const safeLimit = Math.max(y + 1, pageEnd - PAGE_GUARD_PX - CUT_PAD_PX);
+          const minSmartCutY = y + Math.floor(pagePxH * MIN_SMART_CUT_COVERAGE);
 
           let cut = 0;
+
+          // Estratégia 1: corta após o bottom de um elemento (comportamento original)
           for (let i = bottomsImg.length - 1; i >= 0; i--) {
             const b = bottomsImg[i];
-            if (b > y + 8 && b <= safeLimit + EPS_PX) {
+            if (b > minSmartCutY && b <= safeLimit + EPS_PX) {
               cut = b;
               break;
             }
           }
 
-          let cutY = cut > 0 ? cut + CUT_PAD_PX : pageEnd;
-          cutY = Math.min(cutY, pageEnd);
+          const BEFORE_TOP_PAD = 6;
+          let cutY: number;
+
+          if (cut > 0) {
+            // Estratégia 1: bottom encontrado. Refina o corte usando o top do próximo
+            // elemento após `cut`, para garantir que o corte cai no espaço em branco
+            // ENTRE elementos e não dentro de uma linha de texto.
+            let refined = cut + CUT_PAD_PX; // fallback caso não ache próximo top
+            for (let i = 0; i < topsImg.length; i++) {
+              const t = topsImg[i];
+              if (t > cut) {
+                const candidate = t - BEFORE_TOP_PAD;
+                if (candidate > cut && candidate <= pageEnd - PAGE_GUARD_PX) {
+                  refined = candidate;
+                }
+                break;
+              }
+            }
+            cutY = Math.min(refined, pageEnd);
+          } else {
+            // Estratégia 2 (fallback para prosa/relatórios): corta logo ANTES do próximo
+            // elemento começar quando nenhum bottom cai na janela segura.
+            cutY = pageEnd;
+            for (let i = topsImg.length - 1; i >= 0; i--) {
+              const t = topsImg[i];
+              if (t <= y) break; // sorted asc; todos os anteriores também estão abaixo de y
+              const candidate = t - BEFORE_TOP_PAD;
+              if (candidate > y + MIN_ADVANCE_PX && candidate < pageEnd - PAGE_GUARD_PX) {
+                cutY = candidate;
+                break;
+              }
+            }
+          }
 
           if (cutY <= y + MIN_ADVANCE_PX) {
-            cutY = Math.min(imgSize.h, y + pagePxH);
+            cutY = Math.min(contentBottomImg, y + pagePxH);
           }
 
           const sliceH = cutY - y;
@@ -317,12 +405,19 @@ export function useDashboardPdfExport() {
 
           ctx.fillStyle = "#ffffff";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
-
           ctx.drawImage(img, 0, y, imgSize.w, sliceH, 0, 0, imgSize.w, sliceH);
 
-          slices.push({ dataUrl: canvas.toDataURL("image/jpeg", 0.92), sliceH });
+          slices.push({
+            dataUrl: canvas.toDataURL("image/jpeg", 0.92),
+            sliceH,
+          });
 
           y = cutY;
+        }
+
+        // segurança extra: evita salvar PDF vazio
+        if (slices.length === 0) {
+          throw new Error("Nenhuma página foi gerada para o PDF.");
         }
 
         const totalPages = slices.length;
@@ -334,11 +429,19 @@ export function useDashboardPdfExport() {
 
           const xMm = marginMm;
           const yMm = marginMm + headerMm;
-
           const wMm = imgWmm;
           const hMm = (slices[i].sliceH * imgWmm) / imgSize.w;
 
-          pdf.addImage(slices[i].dataUrl, "JPEG", xMm, yMm, wMm, hMm, undefined, "FAST");
+          pdf.addImage(
+            slices[i].dataUrl,
+            "JPEG",
+            xMm,
+            yMm,
+            wMm,
+            hMm,
+            undefined,
+            "FAST"
+          );
         }
 
         pdf.save(filename);
@@ -350,7 +453,7 @@ export function useDashboardPdfExport() {
         setExporting(false);
       }
     },
-    [exporting],
+    [exporting]
   );
 
   return { exportRef, exportPdf, exporting, error };

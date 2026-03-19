@@ -1,4 +1,3 @@
-// lib/mapPlayerToJogador.ts
 import type { Jogador } from "@/type/jogador";
 import type { Player } from "@prisma/client";
 
@@ -17,22 +16,55 @@ function toIso(d: any) {
   return Number.isNaN(dt.getTime()) ? null : dt.toISOString();
 }
 
+function onlyDigits(v: any) {
+  return String(v ?? "").replace(/\D/g, "");
+}
+
+function normalizeCPF(v: any) {
+  return onlyDigits(v).slice(0, 11); // guarda só dígitos; formata só na UI
+}
+
+function calcAgeFromYear(year?: number | null) {
+  if (!year || !Number.isFinite(year)) return null;
+  const now = new Date();
+  const age = now.getFullYear() - year;
+  return age < 0 ? 0 : age;
+}
+
 export function mapPlayerToJogador(p: Player, club?: ClubLite): Jogador {
+  const anoNascimentoRaw = (p as any).anoNascimento;
+  const anoNascimento =
+    typeof anoNascimentoRaw === "number" && Number.isFinite(anoNascimentoRaw)
+      ? Math.trunc(anoNascimentoRaw)
+      : null;
+
+  const idadeFromDb =
+    typeof (p as any).idade === "number" && Number.isFinite((p as any).idade)
+      ? (p as any).idade
+      : null;
+
+  const idadeCalc = calcAgeFromYear(anoNascimento);
+  const idadeFinal = idadeFromDb ?? idadeCalc ?? 0;
+
+  const cpfDigits = normalizeCPF((p as any).cpf);
+  const cpfFinal = cpfDigits || ""; // mantém compat com type atual (string)
+
   return {
     id: p.id,
     nome: p.nome,
-    idade: p.idade,
 
-    //  clube vindo por lookup
+    // ✅ normaliza pra sempre casar com o type atual (string/number)
+    cpf: cpfFinal,
+    idade: idadeFinal,
+
+    // clube vindo por lookup
     clubeId: p.clubeId ?? null,
     clubeNome: club?.nome ?? null,
-    clubeRef: club
-      ? { id: club.id, nome: club.nome, logoUrl: club.logoUrl ?? null }
-      : null,
+    clubeRef: club ? { id: club.id, nome: club.nome, logoUrl: club.logoUrl ?? null } : null,
 
     posicao: p.posicao as Jogador["posicao"],
-    valorMercado: p.valorMercado,
-    peDominante: (p.peDominante === "E" ? "E" : "D") as Jogador["peDominante"],
+    valorMercado: (p as any).valorMercado ?? 0,
+    peDominante: ((p as any).peDominante === "E" ? "E" : "D") as Jogador["peDominante"],
 
     representacao: (p as any).representacao ?? null,
     numeroCamisa: (p as any).numeroCamisa ?? null,
@@ -45,8 +77,8 @@ export function mapPlayerToJogador(p: Player, club?: ClubLite): Jogador {
     createdAt: toIso((p as any).createdAt) ?? undefined,
     updatedAt: toIso((p as any).updatedAt) ?? undefined,
 
-    // ========= DETALHE =========
-    anoNascimento: (p as any).anoNascimento ?? null,
+    // detalhe
+    anoNascimento,
     cidade: (p as any).cidade ?? null,
     nacionalidade: (p as any).nacionalidade ?? null,
 

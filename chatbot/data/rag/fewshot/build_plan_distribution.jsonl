@@ -1,0 +1,5 @@
+{"input":"Distribuição do elenco por posição","output":{"steps":[{"op":"distribution","group_by":"position_code","filters":{"club":"Serrano FC"}}],"output":{"format":"chart_bar"}}}
+{"input":"Distribuição por idade","output":{"steps":[{"op":"distribution","group_by":"age","filters":{"club":"Serrano FC"},"bins":[15,17,19,21,23,25]}],"output":{"format":"chart_histogram"}}}
+{"input":"Distribuição por clube","output":{"steps":[{"op":"distribution","group_by":"club"}],"output":{"format":"chart_bar"}}}
+{"input":"Distribuição por agência","output":{"steps":[{"op":"distribution","group_by":"agency"}],"output":{"format":"chart_bar"}}}
+{"input":"Distribuição por pé dominante","output":{"steps":[{"op":"distribution","group_by":"dominant_foot"}],"output":{"format":"chart_pie"}}}

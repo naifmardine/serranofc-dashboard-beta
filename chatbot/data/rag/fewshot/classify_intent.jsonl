@@ -1,0 +1,14 @@
+{"input":"Top 10 jogadores do Serrano por valor de mercado","output":{"intent":"PLAYER_RANKING","entities":{"club":"Serrano FC"},"metrics":["market_value_mEUR"],"confidence":0.93}}
+{"input":"Top jogadores por % Serrano","output":{"intent":"PLAYER_RANKING","entities":{},"metrics":["serrano_ownership_pct"],"confidence":0.90}}
+{"input":"Quais jogadores do Serrano têm valor acima de 5 milhões?","output":{"intent":"PLAYER_FILTER_LIST","entities":{"club":"Serrano FC"},"metrics":["market_value_mEUR"],"confidence":0.91}}
+{"input":"Lista todos os zagueiros do Serrano","output":{"intent":"PLAYER_FILTER_LIST","entities":{"club":"Serrano FC","position_code":"ZAG"},"metrics":["position_code"],"confidence":0.95}}
+{"input":"Quem é o Anthony de Avelar Mucury?","output":{"intent":"PLAYER_LOOKUP","entities":{"player_query":"Anthony de Avelar Mucury"},"metrics":[],"confidence":0.96}}
+{"input":"Me mostra o perfil do Oliver Martins de Figueiredo","output":{"intent":"PLAYER_LOOKUP","entities":{"player_query":"Oliver Martins de Figueiredo"},"metrics":[],"confidence":0.94}}
+{"input":"Distribuição do elenco por posição","output":{"intent":"SQUAD_DISTRIBUTION","entities":{"club":"Serrano FC"},"metrics":["position_code"],"confidence":0.92}}
+{"input":"Distribuição do elenco por idade","output":{"intent":"SQUAD_DISTRIBUTION","entities":{"club":"Serrano FC"},"metrics":["age"],"confidence":0.91}}
+{"input":"Diagnóstico do elenco do Serrano","output":{"intent":"SQUAD_SUMMARY_INSIGHTS","entities":{"club":"Serrano FC"},"metrics":["age","position_code","market_value_mEUR"],"confidence":0.89}}
+{"input":"Qual a média de valor de mercado por posição?","output":{"intent":"MARKET_OVERVIEW","entities":{},"metrics":["market_value_mEUR"],"confidence":0.86}}
+{"input":"Comparar Anthony de Avelar Mucury vs Felipe Guimarães","output":{"intent":"CLUB_COMPARISON","entities":{"players":["Anthony de Avelar Mucury","Felipe Guimarães"]},"metrics":["age","market_value_mEUR","serrano_ownership_pct"],"confidence":0.88}}
+{"input":"Qual jogador tem mais valor no Serrano?","output":{"intent":"PLAYER_RANKING","entities":{"club":"Serrano FC"},"metrics":["market_value_mEUR"],"confidence":0.90}}
+{"input":"Quais jogadores têm passaporte europeu?","output":{"intent":"PLAYER_FILTER_LIST","entities":{},"metrics":["european_passport"],"confidence":0.88}}
+{"input":"O que significa valor de mercado aqui?","output":{"intent":"DEFINITION_HELP","entities":{"term":"market_value_mEUR"},"metrics":[],"confidence":0.96}}

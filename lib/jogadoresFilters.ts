@@ -1,5 +1,5 @@
 import type { Jogador } from "@/type/jogador";
-import type { JogadoresFilters } from "@/components/JogadoresFilter";
+import type { JogadoresFilters } from "@/components/Atoms/filter/utils";
 
 export function applyJogadoresFilters(players: Jogador[], f: JogadoresFilters) {
   const ageMode = f.ageMode ?? "idade";

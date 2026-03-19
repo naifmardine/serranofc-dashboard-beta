@@ -1,0 +1,4 @@
+{"input":"Comparar Anthony de Avelar Mucury vs Felipe Guimarães","output":{"steps":[{"op":"player_profile","player_query":"Anthony de Avelar Mucury"},{"op":"player_profile","player_query":"Felipe Guimarães"}],"output":{"format":"comparison_table"}}}
+{"input":"Comparar Oliver Martins vs Marlos da Silva Vicente Junior","output":{"steps":[{"op":"player_profile","player_query":"Oliver Martins de Figueiredo"},{"op":"player_profile","player_query":"Marlos da Silva Vicente Junior"}],"output":{"format":"comparison_table"}}}
+{"input":"Comparar valor médio por posição","output":{"steps":[{"op":"aggregate","metric":"market_value_mEUR","agg":"avg","group_by":"position_code"}],"output":{"format":"table"}}}
+{"input":"Comparar média de idade por clube","output":{"steps":[{"op":"aggregate","metric":"age","agg":"avg","group_by":"club"}],"output":{"format":"table"}}}

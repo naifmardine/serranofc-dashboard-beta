@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "execution": {
+    "read_only_required": true,
+    "statement_timeout_ms": 2000,
+    "max_rows_soft": 500,
+    "max_rows_hard": 2000,
+    "default_limit_rankings": 10,
+    "default_limit_lists": 25
+  },
+  "safety": {
+    "block_sql_keywords_in_user_text": ["select ", "insert ", "update ", "delete ", "drop ", "alter ", "create "],
+    "never_return": ["credentials", "secrets", "api keys"],
+    "blocked_fields": ["cpf", "salary", "address", "phone", "email"]
+  },
+  "behavior": {
+    "if_plan_invalid": "Ask for clarification or retry plan once with stricter constraints.",
+    "if_result_empty": "Explain that no matches were found and suggest relaxing filters.",
+    "if_result_too_large": "Summarize and ask user to narrow scope."
+  },
+  "citations": {
+    "required_for_analytic_answers": true,
+    "citation_schema": {
+      "dataset": "string",
+      "query_id": "string",
+      "filters": "object",
+      "snapshot": "string|null"
+    }
+  }
+}

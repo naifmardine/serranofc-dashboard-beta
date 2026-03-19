@@ -52,6 +52,7 @@ export type PlayerSeasonStats = SeasonStats;
 export interface Jogador {
   id: string;
   nome: string;
+  cpf: string;
   idade: number;
   clubeId?: string | null;
   clubeRef?: { id: string; nome: string; logoUrl?: string | null } | null;

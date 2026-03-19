@@ -1,0 +1,5 @@
+{"input":"Lista jogadores do Serrano com valor acima de 5 milhões","output":{"steps":[{"op":"list_players","filters":{"club":"Serrano FC","market_value_mEUR_gte":5}}],"output":{"format":"table"}}}
+{"input":"Quais jogadores têm passaporte europeu?","output":{"steps":[{"op":"list_players","filters":{"european_passport":true}}],"output":{"format":"table"}}}
+{"input":"Jogadores do Botafogo","output":{"steps":[{"op":"list_players","filters":{"club":"Botafogo"}}],"output":{"format":"table"}}}
+{"input":"Jogadores da agência RSF","output":{"steps":[{"op":"list_players","filters":{"agency":"RSF"}}],"output":{"format":"table"}}}
+{"input":"Jogadores sub 18","output":{"steps":[{"op":"list_players","filters":{"age_lte":18}}],"output":{"format":"table"}}}

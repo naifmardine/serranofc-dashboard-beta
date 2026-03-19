@@ -1,0 +1,154 @@
+{
+  "version": "1.1",
+  "notes": [
+    "Este catálogo reflete os campos exibidos no Dashboard Serrano > Jogadores.",
+    "CPF é campo sensível e deve ser bloqueado para respostas e outputs (apenas pode ser usado internamente para lookup, se permitido pelo backend).",
+    "Valor de mercado é exibido em milhões de EUR (mEUR). Ex: 2,5 => € 2.500.000."
+  ],
+  "metrics": [
+    {
+      "id": "market_value_mEUR",
+      "label": "Valor de mercado (milhões EUR)",
+      "type": "numeric",
+      "unit": "mEUR",
+      "synonyms": [
+        "valor de mercado",
+        "market value",
+        "valuation",
+        "valor",
+        "preço",
+        "€",
+        "milhões",
+        "mi",
+        "m"
+      ],
+      "display_hint": "UI usa unidade 'milhões (EUR)' — ex: 2,5 = € 2.500.000",
+      "missing_behavior": "Some players may have no market value (Sem valor). Treat as null; don't impute."
+    },
+    {
+      "id": "serrano_ownership_pct",
+      "label": "% Serrano (posse)",
+      "type": "numeric",
+      "unit": "percent",
+      "synonyms": [
+        "% serrano",
+        "posse",
+        "ownership",
+        "participação",
+        "percentual serrano",
+        "porcentagem serrano"
+      ],
+      "display_hint": "Range típico 10–100; pode estar ausente (Sem posse).",
+      "missing_behavior": "Null when unknown/absent."
+    },
+    {
+      "id": "birth_year",
+      "label": "Ano de nascimento",
+      "type": "numeric",
+      "unit": "year",
+      "synonyms": [
+        "ano nasc",
+        "ano de nascimento",
+        "nascimento",
+        "birth year",
+        "yob"
+      ],
+      "missing_behavior": "Should exist for all players shown in UI."
+    },
+    {
+      "id": "age",
+      "label": "Idade",
+      "type": "numeric",
+      "unit": "years",
+      "synonyms": ["idade", "anos", "age"],
+      "derived_from": ["birth_year", "snapshot_date"],
+      "notes": "Se não houver snapshot_date explícito, assumir 'snapshot mais recente' do banco (e declarar como suposição)."
+    },
+    {
+      "id": "height_cm",
+      "label": "Altura (cm)",
+      "type": "numeric",
+      "unit": "cm",
+      "synonyms": ["altura", "height", "cm"],
+      "display_hint": "Pode estar ausente (Sem altura).",
+      "missing_behavior": "Null when unknown/absent."
+    },
+    {
+      "id": "has_cpf",
+      "label": "CPF cadastrado",
+      "type": "boolean",
+      "unit": null,
+      "synonyms": ["cpf cadastrado", "cpf", "documento", "cadastrado", "não cadastrado"],
+      "privacy": "CPF value itself is sensitive; only expose boolean 'has_cpf'."
+    },
+    {
+      "id": "european_passport",
+      "label": "Passaporte europeu",
+      "type": "boolean",
+      "unit": null,
+      "synonyms": ["passaporte europeu", "eu passport", "europeu", "ue"],
+      "missing_behavior": "If not present, treat as null and avoid assumptions."
+    },
+    {
+      "id": "national_team_called",
+      "label": "Convocado para seleção",
+      "type": "boolean",
+      "unit": null,
+      "synonyms": ["convocado", "seleção", "national team", "convocação"],
+      "missing_behavior": "If not present, treat as null and avoid assumptions."
+    },
+    {
+      "id": "dominant_foot",
+      "label": "Pé dominante",
+      "type": "categorical",
+      "unit": null,
+      "synonyms": ["pé dominante", "pé", "foot", "destro", "canhoto", "direito", "esquerdo"],
+      "allowed_values": ["RIGHT", "LEFT", "UNKNOWN"],
+      "missing_behavior": "UNKNOWN when absent."
+    },
+    {
+      "id": "position_code",
+      "label": "Posição (código UI)",
+      "type": "categorical",
+      "unit": null,
+      "synonyms": ["posição", "pos", "role", "posição abreviada"],
+      "allowed_values": ["ATA", "GOL", "LD", "LE", "MEI", "PD", "PE", "VOL", "ZAG"],
+      "notes": "UI trabalha com esses códigos; normalizar sinônimos (ex.: 'Goleiro' => GOL)."
+    },
+    {
+      "id": "club",
+      "label": "Clube",
+      "type": "categorical",
+      "unit": null,
+      "synonyms": ["clube", "time", "team", "equipe"],
+      "missing_behavior": "Should exist for players shown in UI."
+    },
+    {
+      "id": "agency",
+      "label": "Agência",
+      "type": "categorical",
+      "unit": null,
+      "synonyms": ["agência", "agency", "empresário", "representante"],
+      "missing_behavior": "May be null/empty (Sem agência)."
+    }
+  ],
+  "ranking_safe_metrics": [
+    "market_value_mEUR",
+    "serrano_ownership_pct",
+    "age",
+    "birth_year",
+    "height_cm"
+  ],
+  "distribution_safe_fields": [
+    "age",
+    "birth_year",
+    "height_cm",
+    "position_code",
+    "club",
+    "agency",
+    "dominant_foot",
+    "european_passport",
+    "national_team_called",
+    "has_cpf"
+  ]
+}

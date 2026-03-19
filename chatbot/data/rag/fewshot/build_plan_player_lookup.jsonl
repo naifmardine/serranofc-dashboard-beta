@@ -1,0 +1,4 @@
+{"input":"Quem é o Anthony de Avelar Mucury?","output":{"steps":[{"op":"player_profile","player_query":"Anthony de Avelar Mucury"}],"output":{"format":"profile_card"}}}
+{"input":"Me mostra o perfil do Oliver Martins de Figueiredo","output":{"steps":[{"op":"player_profile","player_query":"Oliver Martins de Figueiredo"}],"output":{"format":"profile_card"}}}
+{"input":"Dados do jogador Vicente Uderman Azer","output":{"steps":[{"op":"player_profile","player_query":"Vicente Uderman Azer"}],"output":{"format":"profile_card"}}}
+{"input":"Informações do atleta Caike Lourenço Valença","output":{"steps":[{"op":"player_profile","player_query":"Caike Lourenço Valença"}],"output":{"format":"profile_card"}}}    

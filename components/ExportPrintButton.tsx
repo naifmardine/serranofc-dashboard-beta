@@ -8,6 +8,7 @@ const SERRANO_YELLOW = "#F2CD00";
 type Props = {
   onClick: () => void;
   loading?: boolean;
+  subtitle?: string;
   disabled?: boolean;
   className?: string;
 };
@@ -15,6 +16,7 @@ type Props = {
 export default function ExportPrintButton({
   onClick,
   loading,
+  subtitle,
   disabled,
   className,
 }: Props) {
@@ -50,7 +52,7 @@ export default function ExportPrintButton({
               {loading ? "Gerando..." : "Exportar PDF"}
             </div>
             <div className="text-[11px] font-semibold text-white/80">
-              {loading ? "Aguarde" : "Baixar dashboard"}
+              {loading ? "Aguarde" : (subtitle ?? "Baixar dashboard")}
             </div>
           </div>
         </div>

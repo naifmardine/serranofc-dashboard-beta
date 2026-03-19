@@ -80,7 +80,10 @@ function isPct0to1(p?: number | null) {
 
 /* ========================= HOOK CLICK OUTSIDE ========================= */
 
-function useClickOutside<T extends HTMLElement>(open: boolean, onClose: () => void) {
+function useClickOutside<T extends HTMLElement>(
+  open: boolean,
+  onClose: () => void,
+) {
   const ref = useRef<T | null>(null);
 
   useEffect(() => {
@@ -111,7 +114,8 @@ function SeasonSelect({
   const [open, setOpen] = useState(false);
   const ref = useClickOutside<HTMLDivElement>(open, () => setOpen(false));
 
-  const label = (v: SeasonValue) => (v === "todas" ? "Todas as temporadas" : String(v));
+  const label = (v: SeasonValue) =>
+    v === "todas" ? "Todas as temporadas" : String(v);
 
   return (
     <div className="relative" ref={ref}>
@@ -182,7 +186,9 @@ export default function PlayerDetailPage() {
           throw new Error(data.error || `Erro HTTP ${res.status}`);
         }
 
-        const data = (await res.json().catch(() => ({}))) as { jogador?: Jogador } | Jogador;
+        const data = (await res.json().catch(() => ({}))) as
+          | { jogador?: Jogador }
+          | Jogador;
         const j = (data as any)?.jogador ?? data;
 
         if (!active) return;
@@ -239,15 +245,23 @@ export default function PlayerDetailPage() {
   const pe = jogador.peDominante;
   const isDomDireito = pe === "D";
 
-  const leftFootSrc = isDomDireito ? getFootSrc("esquerdo") : getFootSrc("esquerdo_dominante");
-  const rightFootSrc = isDomDireito ? getFootSrc("direito_dominante") : getFootSrc("direito");
+  const leftFootSrc = isDomDireito
+    ? getFootSrc("esquerdo")
+    : getFootSrc("esquerdo_dominante");
+  const rightFootSrc = isDomDireito
+    ? getFootSrc("direito_dominante")
+    : getFootSrc("direito");
 
   const statsPorTemporada = jogador.statsPorTemporada || null;
-  const temStats = !!(statsPorTemporada && Object.keys(statsPorTemporada).length > 0);
+  const temStats = !!(
+    statsPorTemporada && Object.keys(statsPorTemporada).length > 0
+  );
 
   let seasonOptions: SeasonValue[] = ["todas"];
   if (temStats && statsPorTemporada) {
-    const keys = Object.keys(statsPorTemporada).sort((a, b) => Number(b) - Number(a));
+    const keys = Object.keys(statsPorTemporada).sort(
+      (a, b) => Number(b) - Number(a),
+    );
     seasonOptions = ["todas", ...keys];
   }
 
@@ -256,7 +270,11 @@ export default function PlayerDetailPage() {
     if (season === "todas") stats = sumStats(statsPorTemporada);
     else {
       const s = statsPorTemporada[season] || {};
-      stats = { gols: s.gols ?? 0, assistencias: s.assistencias ?? 0, partidas: s.partidas ?? 0 };
+      stats = {
+        gols: s.gols ?? 0,
+        assistencias: s.assistencias ?? 0,
+        partidas: s.partidas ?? 0,
+      };
     }
   }
 
@@ -269,13 +287,21 @@ export default function PlayerDetailPage() {
   const valorMercadoInteiro = (jogador.valorMercado ?? 0) * 1_000_000;
   const mostrarValorMercado = valorMercadoInteiro > 0;
 
-  const posseRaw = typeof jogador.possePct === "number" ? jogador.possePct : null;
-  const posseFrac = posseRaw == null ? null : isPct0to1(posseRaw) ? posseRaw : clampPct01(posseRaw / 100);
+  const posseRaw =
+    typeof jogador.possePct === "number" ? jogador.possePct : null;
+  const posseFrac =
+    posseRaw == null
+      ? null
+      : isPct0to1(posseRaw)
+        ? posseRaw
+        : clampPct01(posseRaw / 100);
 
-  const valorSerranoInteiro = posseFrac != null ? valorMercadoInteiro * posseFrac : 0;
+  const valorSerranoInteiro =
+    posseFrac != null ? valorMercadoInteiro * posseFrac : 0;
   const mostrarValorSerrano = valorSerranoInteiro > 0;
 
-  const possePctLabel = posseFrac == null ? null : `${(posseFrac * 100).toFixed(1)}%`;
+  const possePctLabel =
+    posseFrac == null ? null : `${(posseFrac * 100).toFixed(1)}%`;
 
   const clubName = jogador.clubeNome ?? jogador.clubeRef?.nome ?? null;
   const clubLogo = jogador.clubeRef?.logoUrl ?? null;
@@ -309,7 +335,11 @@ export default function PlayerDetailPage() {
           <div className="grid h-32 w-32 shrink-0 place-items-center overflow-hidden rounded-full border border-[#dfe3f0] bg-linear-to-br from-[#eef2ff] to-white">
             {fotoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={fotoUrl} alt={jogador.nome} className="h-full w-full object-cover" />
+              <img
+                src={fotoUrl}
+                alt={jogador.nome}
+                className="h-full w-full object-cover"
+              />
             ) : (
               <span className="text-[30px] font-extrabold text-[#003399]">
                 {initials(jogador.nome)}
@@ -373,30 +403,56 @@ export default function PlayerDetailPage() {
       </header>
 
       <section className="mb-3.5 rounded-[14px] border border-gray-200 bg-white p-4">
-        <h2 className="mb-3 text-base font-extrabold text-slate-900">Informações</h2>
+        <h2 className="mb-3 text-base font-extrabold text-slate-900">
+          Informações
+        </h2>
 
         <div className="grid grid-cols-3 gap-3">
-          {jogador.representacao ? <Info label="Representação" value={jogador.representacao} /> : null}
+          {jogador.cpf ? (
+            <Info
+              label="CPF"
+              value={jogador.cpf
+                .replace(/\D/g, "")
+                .slice(0, 11)
+                .replace(/(\d{3})(\d)/, "$1.$2")
+                .replace(/(\d{3})(\d)/, "$1.$2")
+                .replace(/(\d{3})(\d{1,2})$/, "$1-$2")}
+            />
+          ) : null}
 
-          {possePctLabel ? <Info label="Posse Serrano" value={possePctLabel} /> : null}
+          {jogador.representacao ? (
+            <Info label="Representação" value={jogador.representacao} />
+          ) : null}
+
+          {possePctLabel ? (
+            <Info label="Posse Serrano" value={possePctLabel} />
+          ) : null}
 
           {typeof jogador.numeroCamisa === "number" ? (
             <Info label="Número da camisa" value={`#${jogador.numeroCamisa}`} />
           ) : null}
 
-          {typeof jogador.altura === "number" ? <Info label="Altura" value={`${jogador.altura} cm`} /> : null}
+          {typeof jogador.altura === "number" ? (
+            <Info label="Altura" value={`${jogador.altura} cm`} />
+          ) : null}
 
           {mostrarValorMercado ? (
             <Info
               label="Valor mercado"
-              value={valorMercadoInteiro.toLocaleString("pt-BR", { style: "currency", currency: "EUR" })}
+              value={valorMercadoInteiro.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "EUR",
+              })}
             />
           ) : null}
 
           {mostrarValorSerrano ? (
             <Info
               label="Valor do Serrano"
-              value={valorSerranoInteiro.toLocaleString("pt-BR", { style: "currency", currency: "EUR" })}
+              value={valorSerranoInteiro.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "EUR",
+              })}
             />
           ) : null}
 
@@ -420,7 +476,9 @@ export default function PlayerDetailPage() {
             <Info
               label="Seleção"
               value={`Convocado${
-                jogador.selecao.anos?.length ? ` (${jogador.selecao.anos.join(", ")})` : ""
+                jogador.selecao.anos?.length
+                  ? ` (${jogador.selecao.anos.join(", ")})`
+                  : ""
               }${jogador.selecao.categoria ? ` – ${jogador.selecao.categoria}` : ""}`}
             />
           ) : null}
@@ -429,14 +487,20 @@ export default function PlayerDetailPage() {
 
       {showResumo ? (
         <section className="mb-3.5 rounded-[14px] border border-gray-200 bg-white p-4">
-          <h2 className="m-0 text-base font-extrabold text-slate-900">Resumo</h2>
+          <h2 className="m-0 text-base font-extrabold text-slate-900">
+            Resumo
+          </h2>
 
           <div className="mt-4 grid items-stretch gap-6 md:grid-cols-[1fr_1.2fr]">
             <div className="flex h-full flex-col">
               <div className="flex justify-center">
                 <div className="flex items-center gap-2">
                   <span className="text-[13px] text-gray-600">Temporada</span>
-                  <SeasonSelect value={season} options={seasonOptions} onChange={setSeason} />
+                  <SeasonSelect
+                    value={season}
+                    options={seasonOptions}
+                    onChange={setSeason}
+                  />
                 </div>
               </div>
 
@@ -474,7 +538,9 @@ export default function PlayerDetailPage() {
       {showInstagram ? (
         <section className="mb-3.5 rounded-[14px] border border-gray-200 bg-white p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="m-0 text-base font-extrabold text-slate-900">Instagram</h2>
+            <h2 className="m-0 text-base font-extrabold text-slate-900">
+              Instagram
+            </h2>
             <a
               href={`https://www.instagram.com/${jogador.instagramHandle!.replace("@", "")}/`}
               target="_blank"
@@ -516,7 +582,13 @@ export default function PlayerDetailPage() {
 
 /* ========================= COMPONENTES AUXILIARES ========================= */
 
-function ClubBadge({ nome, logoUrl }: { nome: string; logoUrl?: string | null }) {
+function ClubBadge({
+  nome,
+  logoUrl,
+}: {
+  nome: string;
+  logoUrl?: string | null;
+}) {
   return (
     <div className="flex items-center gap-3 rounded-[14px] border border-gray-200 bg-white px-3.5 py-2.5 shadow-[0_6px_18px_rgba(0,0,0,0.05)]">
       {logoUrl ? (
@@ -532,7 +604,9 @@ function ClubBadge({ nome, logoUrl }: { nome: string; logoUrl?: string | null })
       )}
 
       <div className="flex flex-col leading-tight">
-        <span className="text-[11px] uppercase tracking-wider text-gray-500">Clube</span>
+        <span className="text-[11px] uppercase tracking-wider text-gray-500">
+          Clube
+        </span>
         <span className="max-w-[220px] overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-extrabold text-gray-900">
           {nome}
         </span>
@@ -544,7 +618,9 @@ function ClubBadge({ nome, logoUrl }: { nome: string; logoUrl?: string | null })
 function Info({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex flex-col rounded-[10px] border border-[#eef1f5] bg-gray-50 px-3 py-2.5">
-      <span className="text-xs uppercase tracking-wider text-gray-500">{label}</span>
+      <span className="text-xs uppercase tracking-wider text-gray-500">
+        {label}
+      </span>
       <span className="text-[13px] font-bold text-gray-900">{value}</span>
     </div>
   );
@@ -553,8 +629,12 @@ function Info({ label, value }: { label: string; value: ReactNode }) {
 function StatItem({ label, value }: { label: string; value: number }) {
   return (
     <div className="min-w-[90px] text-center">
-      <span className="leading-none text-[28px] font-extrabold text-slate-900">{value}</span>
-      <div className="mt-1 text-xs uppercase tracking-wider text-gray-500">{label}</div>
+      <span className="leading-none text-[28px] font-extrabold text-slate-900">
+        {value}
+      </span>
+      <div className="mt-1 text-xs uppercase tracking-wider text-gray-500">
+        {label}
+      </div>
     </div>
   );
 }

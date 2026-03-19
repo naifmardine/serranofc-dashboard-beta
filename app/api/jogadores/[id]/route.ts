@@ -61,9 +61,10 @@ export async function PATCH(
   try {
     const body = await request.json().catch(() => ({}));
 
-    //  contrato atual: sem "clube" (string) e sem "variacaoPct"
+    // contrato atual: sem "clube" (string) e sem "variacaoPct"
     const {
       nome,
+      cpf,
       idade,
       posicao,
       valorMercado,
@@ -109,12 +110,31 @@ export async function PATCH(
       selecao,
       statsPorTemporada,
 
-      //  FK do clube
+      // FK do clube
       clubeId,
     } = body ?? {};
 
+    // (opcional) valida CPF incompleto quando enviado
+    if (cpf !== undefined && cpf !== null) {
+      const clean = String(cpf).replace(/\D/g, "").slice(0, 11);
+      if (clean && clean.length !== 11) {
+        return NextResponse.json(
+          { error: "CPF inválido (precisa ter 11 dígitos)." },
+          { status: 400 }
+        );
+      }
+    }
+
     const data: any = {
       ...(nome !== undefined && { nome }),
+
+      ...(cpf !== undefined && {
+        cpf:
+          cpf === null
+            ? null
+            : String(cpf).replace(/\D/g, "").slice(0, 11) || null,
+      }),
+
       ...(idade !== undefined && { idade }),
       ...(posicao !== undefined && { posicao }),
       ...(valorMercado !== undefined && { valorMercado }),
@@ -161,7 +181,7 @@ export async function PATCH(
       ...(statsPorTemporada !== undefined && { statsPorTemporada }),
     };
 
-    //  aplica clubeId (com validação)
+    // aplica clubeId (com validação)
     if (clubeId !== undefined) {
       const nextClubeId = clubeId ? String(clubeId) : null;
 

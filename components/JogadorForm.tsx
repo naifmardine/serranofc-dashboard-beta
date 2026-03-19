@@ -45,8 +45,12 @@ const INPUT_CLASSES =
   "focus:outline-none focus:ring-2 focus:ring-[#003399]/30 focus:border-[#003399] placeholder:text-gray-400";
 
 export type JogadorFormModel = Partial<Jogador> & {
+  // novos/compat
   clubeId?: string | null;
   clubeRef?: { id: string; nome: string; slug?: string; logoUrl?: string | null } | null;
+
+  // novo campo (salvo normalizado: só dígitos)
+  cpf?: string | null;
 };
 
 type Props = {
@@ -67,6 +71,26 @@ function calcAgeFromYear(year?: number | null) {
   const now = new Date();
   const age = now.getFullYear() - year;
   return age < 0 ? 0 : age;
+}
+
+function onlyDigits(v: string) {
+  return v.replace(/\D/g, "");
+}
+
+function formatCPF(digitsRaw: string) {
+  const d = onlyDigits(digitsRaw).slice(0, 11);
+
+  const p1 = d.slice(0, 3);
+  const p2 = d.slice(3, 6);
+  const p3 = d.slice(6, 9);
+  const p4 = d.slice(9, 11);
+
+  let out = p1;
+  if (p2) out += `.${p2}`;
+  if (p3) out += `.${p3}`;
+  if (p4) out += `-${p4}`;
+
+  return out;
 }
 
 export default function JogadorForm({
@@ -114,6 +138,11 @@ export default function JogadorForm({
 
     updateField("anoNascimento", year);
     updateField("idade", calcAgeFromYear(year)); // compat (enquanto backend ainda tiver idade)
+  }
+
+  function handleCPFChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const digits = onlyDigits(e.target.value).slice(0, 11);
+    updateField("cpf", digits); // salva normalizado (só números)
   }
 
   function handleStatsFieldChange(seasonKey: string, field: keyof SeasonStats) {
@@ -208,6 +237,18 @@ export default function JogadorForm({
             />
           </FormField>
 
+          <FormField label="CPF">
+            <input
+              className={INPUT_CLASSES}
+              value={formatCPF((form as any).cpf ?? "")}
+              onChange={handleCPFChange}
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="000.000.000-00"
+              aria-label="CPF"
+            />
+          </FormField>
+
           <FormField label="Clube atual (cadastro)">
             <div className="space-y-2">
               <ClubSelect
@@ -219,10 +260,6 @@ export default function JogadorForm({
                 placeholder="Selecione um clube..."
                 allowClear={!requireClub}
               />
-
-              <div className="text-[12px] text-gray-500">
-                Isso salva <b>clubeId</b> (novo) e mantém <b>clube</b> (texto) por compatibilidade.
-              </div>
             </div>
           </FormField>
 
@@ -283,17 +320,6 @@ export default function JogadorForm({
               value={form.valorMercado ?? ""}
               onChange={handleNumberChange("valorMercado")}
               placeholder="Ex.: 1.5"
-            />
-          </FormField>
-
-          <FormField label="Variação % (último período)">
-            <input
-              type="number"
-              step="0.1"
-              className={INPUT_CLASSES}
-              value={form.variacaoPct ?? ""}
-              onChange={handleNumberChange("variacaoPct")}
-              placeholder="Ex.: 33.3"
             />
           </FormField>
 

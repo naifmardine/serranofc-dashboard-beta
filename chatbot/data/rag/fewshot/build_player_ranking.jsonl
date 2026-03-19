@@ -1,0 +1,5 @@
+{"input":"Top 10 jogadores por valor de mercado","output":{"steps":[{"op":"rank_players","metric":"market_value_mEUR","order":"desc","limit":10}],"output":{"format":"table"}}}
+{"input":"Top jogadores do Serrano por valor","output":{"steps":[{"op":"rank_players","metric":"market_value_mEUR","filters":{"club":"Serrano FC"},"order":"desc","limit":10}],"output":{"format":"table"}}}
+{"input":"Top 5 jogadores por % Serrano","output":{"steps":[{"op":"rank_players","metric":"serrano_ownership_pct","order":"desc","limit":5}],"output":{"format":"table"}}}
+{"input":"Jogadores mais jovens do Serrano","output":{"steps":[{"op":"rank_players","metric":"age","filters":{"club":"Serrano FC"},"order":"asc","limit":10}],"output":{"format":"table"}}}
+{"input":"Top zagueiros por valor","output":{"steps":[{"op":"rank_players","metric":"market_value_mEUR","filters":{"position_code":"ZAG"},"order":"desc","limit":10}],"output":{"format":"table"}}}

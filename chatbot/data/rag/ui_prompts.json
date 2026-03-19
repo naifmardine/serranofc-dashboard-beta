@@ -1,0 +1,221 @@
+{
+  "version": "1.0",
+  "notes": [
+    "Prompts pensados para Admins do Serrano FC.",
+    "Alinhados com intents/DSL: ranking, listas filtradas, distribuições, comparações, insights.",
+    "Evita CPF e qualquer dado sensível. Usa apenas has_cpf quando relevante.",
+    "Se não houver histórico/time series no banco, evite promessas de 'histórico'."
+  ],
+  "chips": [
+    {
+      "id": "rank_top_value_serrano",
+      "label": "Top jogadores (valor)",
+      "prompt": "Top 10 jogadores do Serrano por valor de mercado.",
+      "intent_hint": "PLAYER_RANKING",
+      "tags": ["ranking", "serrano", "market_value"]
+    },
+    {
+      "id": "rank_top_ownership",
+      "label": "Top jogadores (% Serrano)",
+      "prompt": "Top 10 jogadores com maior % Serrano.",
+      "intent_hint": "PLAYER_RANKING",
+      "tags": ["ranking", "ownership", "portfolio"]
+    },
+    {
+      "id": "rank_youngest_serrano",
+      "label": "Mais jovens (Serrano)",
+      "prompt": "Top 10 jogadores mais jovens do Serrano (menor idade).",
+      "intent_hint": "PLAYER_RANKING",
+      "tags": ["ranking", "age", "serrano"]
+    },
+    {
+      "id": "rank_value_u18",
+      "label": "Top sub-18 (valor)",
+      "prompt": "Top 10 jogadores sub-18 por valor de mercado.",
+      "intent_hint": "PLAYER_RANKING",
+      "tags": ["ranking", "age", "market_value"]
+    },
+    {
+      "id": "list_value_gt_5_serrano",
+      "label": "Serrano > €5mi",
+      "prompt": "Quais jogadores do Serrano têm valor de mercado acima de 5 milhões?",
+      "intent_hint": "PLAYER_FILTER_LIST",
+      "tags": ["filter", "serrano", "market_value"]
+    },
+    {
+      "id": "list_low_ownership_high_value",
+      "label": "Alto valor + baixa posse",
+      "prompt": "Liste jogadores com valor de mercado acima de 5 milhões e % Serrano abaixo de 30%.",
+      "intent_hint": "PLAYER_FILTER_LIST",
+      "tags": ["risk", "ownership", "market_value"]
+    },
+    {
+      "id": "list_serrano_by_position",
+      "label": "Jogadores por posição",
+      "prompt": "Liste os jogadores do Serrano por posição (ATA, MEI, VOL, ZAG, LD, LE, PD, PE, GOL).",
+      "intent_hint": "SQUAD_DISTRIBUTION",
+      "tags": ["squad", "distribution", "position"]
+    },
+    {
+      "id": "dist_serrano_position",
+      "label": "Distribuição por posição",
+      "prompt": "Distribuição do elenco do Serrano por posição.",
+      "intent_hint": "SQUAD_DISTRIBUTION",
+      "tags": ["distribution", "serrano", "position"]
+    },
+    {
+      "id": "dist_serrano_age_bins",
+      "label": "Distribuição por idade",
+      "prompt": "Distribuição do elenco do Serrano por idade (faixas: 15–17, 18–20, 21–23, 24–25).",
+      "intent_hint": "SQUAD_DISTRIBUTION",
+      "tags": ["distribution", "serrano", "age"]
+    },
+    {
+      "id": "dist_serrano_clubs",
+      "label": "Distribuição por clube",
+      "prompt": "Distribuição do portfólio por clube atual (quantos atletas em cada clube).",
+      "intent_hint": "SQUAD_DISTRIBUTION",
+      "tags": ["distribution", "club", "portfolio"]
+    },
+    {
+      "id": "dist_serrano_agency",
+      "label": "Distribuição por agência",
+      "prompt": "Distribuição do portfólio por agência (incluindo 'Sem agência').",
+      "intent_hint": "SQUAD_DISTRIBUTION",
+      "tags": ["distribution", "agency", "portfolio"]
+    },
+    {
+      "id": "dist_serrano_foot",
+      "label": "Pé dominante",
+      "prompt": "Distribuição do portfólio por pé dominante (direito vs esquerdo).",
+      "intent_hint": "SQUAD_DISTRIBUTION",
+      "tags": ["distribution", "dominant_foot"]
+    },
+    {
+      "id": "dist_eu_passport_share",
+      "label": "% com passaporte europeu",
+      "prompt": "Qual percentual do portfólio tem passaporte europeu?",
+      "intent_hint": "SQUAD_DISTRIBUTION",
+      "tags": ["distribution", "european_passport"]
+    },
+    {
+      "id": "dist_has_cpf_share",
+      "label": "% CPF cadastrado",
+      "prompt": "Qual percentual dos atletas está com CPF cadastrado (sem mostrar CPF)?",
+      "intent_hint": "SQUAD_DISTRIBUTION",
+      "tags": ["distribution", "has_cpf", "compliance"]
+    },
+    {
+      "id": "agg_serrano_total_value",
+      "label": "Valor total (Serrano)",
+      "prompt": "Qual é o valor total de mercado do elenco do Serrano (soma)?",
+      "intent_hint": "SQUAD_SUMMARY_INSIGHTS",
+      "tags": ["aggregate", "serrano", "market_value"]
+    },
+    {
+      "id": "agg_serrano_avg_age",
+      "label": "Idade média (Serrano)",
+      "prompt": "Qual é a idade média do elenco do Serrano?",
+      "intent_hint": "SQUAD_SUMMARY_INSIGHTS",
+      "tags": ["aggregate", "serrano", "age"]
+    },
+    {
+      "id": "agg_value_by_position_serrano",
+      "label": "Valor por posição (Serrano)",
+      "prompt": "Quanto do valor total do Serrano está concentrado em cada posição?",
+      "intent_hint": "SQUAD_SUMMARY_INSIGHTS",
+      "tags": ["aggregate", "serrano", "position", "market_value"]
+    },
+    {
+      "id": "agg_avg_value_by_position_market",
+      "label": "Média de valor por posição (mercado)",
+      "prompt": "Qual a média de valor de mercado por posição no mercado (todos os clubes)?",
+      "intent_hint": "MARKET_OVERVIEW",
+      "tags": ["market", "aggregate", "position", "market_value"]
+    },
+    {
+      "id": "rank_clubs_by_total_value",
+      "label": "Ranking clubes (valor total)",
+      "prompt": "Ranking dos clubes por valor total de mercado (top 10).",
+      "intent_hint": "CLUB_COMPARISON",
+      "tags": ["clubs", "ranking", "market_value"]
+    },
+    {
+      "id": "compare_serrano_vs_market_avg_age",
+      "label": "Serrano vs mercado (idade média)",
+      "prompt": "Compare a idade média do Serrano com a idade média do mercado (todos os clubes).",
+      "intent_hint": "CLUB_COMPARISON",
+      "tags": ["compare", "serrano", "market", "age"]
+    },
+    {
+      "id": "compare_serrano_vs_market_total_value",
+      "label": "Serrano vs mercado (valor total)",
+      "prompt": "Compare o valor total do Serrano com a média dos clubes do mercado.",
+      "intent_hint": "CLUB_COMPARISON",
+      "tags": ["compare", "serrano", "market", "market_value"]
+    },
+    {
+      "id": "compare_two_players_basic",
+      "label": "Comparar atletas",
+      "prompt": "Comparar jogador A vs jogador B em idade, posição, clube, valor de mercado e % Serrano.",
+      "intent_hint": "PLAYER_LOOKUP",
+      "tags": ["compare", "players"]
+    },
+    {
+      "id": "find_similar_profile_proxy",
+      "label": "Parecidos (heurística)",
+      "prompt": "Quais jogadores têm perfil parecido com o jogador X em posição, idade e faixa de valor? (mostre uma lista curta).",
+      "intent_hint": "PLAYER_FILTER_LIST",
+      "tags": ["search", "players", "similarity_proxy"]
+    },
+    {
+      "id": "risk_high_value_low_ownership_serrano_only",
+      "label": "Risco (Serrano): alto valor baixa posse",
+      "prompt": "No Serrano, quais atletas têm alto valor (>= 5 mi) mas baixa posse do Serrano (< 30%)?",
+      "intent_hint": "PLAYER_FILTER_LIST",
+      "tags": ["risk", "serrano", "ownership", "market_value"]
+    },
+    {
+      "id": "opportunity_high_ownership_high_value",
+      "label": "Oportunidade: alta posse + alto valor",
+      "prompt": "Quais atletas têm % Serrano >= 50% e valor de mercado >= 5 mi?",
+      "intent_hint": "PLAYER_FILTER_LIST",
+      "tags": ["opportunity", "ownership", "market_value"]
+    },
+    {
+      "id": "list_by_club_botafogo",
+      "label": "Atletas no Botafogo",
+      "prompt": "Liste os atletas que estão no Botafogo, com posição, ano de nascimento, valor e % Serrano.",
+      "intent_hint": "PLAYER_FILTER_LIST",
+      "tags": ["filter", "club"]
+    },
+    {
+      "id": "list_by_agency_rsf",
+      "label": "Atletas da agência RSF",
+      "prompt": "Liste os atletas da agência RSF, com clube, posição, valor e % Serrano.",
+      "intent_hint": "PLAYER_FILTER_LIST",
+      "tags": ["filter", "agency"]
+    },
+    {
+      "id": "squad_gap_positions",
+      "label": "Gaps por posição",
+      "prompt": "Quais posições têm menos atletas no portfólio? (mostre contagem por posição e destaque as menores).",
+      "intent_hint": "SQUAD_SUMMARY_INSIGHTS",
+      "tags": ["insights", "position", "depth"]
+    },
+    {
+      "id": "squad_value_concentration_top10",
+      "label": "Concentração de valor (top 10)",
+      "prompt": "Quanto do valor total do portfólio está concentrado nos 10 jogadores mais valiosos?",
+      "intent_hint": "SQUAD_SUMMARY_INSIGHTS",
+      "tags": ["insights", "market_value", "concentration"]
+    },
+    {
+      "id": "definition_market_value",
+      "label": "Definição: valor de mercado",
+      "prompt": "O que significa 'valor de mercado' aqui e qual é a unidade?",
+      "intent_hint": "DEFINITION_HELP",
+      "tags": ["definition"]
+    }
+  ]
+}

@@ -12,6 +12,7 @@ import AdminButton from "@/components/Atoms/AdminButton";
 function createEmptyForm(): JogadorFormModel {
   return {
     nome: "",
+    cpf: null,
     idade: null,
     posicao: "ATA",
     peDominante: "D",

@@ -20,6 +20,26 @@ const fmtEUR = (mi: number) =>
   }) +
   "M";
 
+function onlyDigits(v: string) {
+  return (v ?? "").replace(/\D/g, "");
+}
+
+function formatCPF(digitsRaw: string) {
+  const d = onlyDigits(digitsRaw).slice(0, 11);
+
+  const p1 = d.slice(0, 3);
+  const p2 = d.slice(3, 6);
+  const p3 = d.slice(6, 9);
+  const p4 = d.slice(9, 11);
+
+  let out = p1;
+  if (p2) out += `.${p2}`;
+  if (p3) out += `.${p3}`;
+  if (p4) out += `-${p4}`;
+
+  return out;
+}
+
 function calcAgeFromYear(year?: number | null) {
   if (!year || !Number.isFinite(year)) return null;
   const now = new Date();
@@ -101,6 +121,12 @@ export default function Card({ player, onClick }: Props) {
   const idadeExibida =
     idadeCalc ?? (typeof player.idade === "number" ? player.idade : null);
 
+  const cpfRaw = (player as any).cpf ? String((player as any).cpf) : "";
+  const cpfFmt = cpfRaw ? formatCPF(cpfRaw) : "";
+
+  // regra: se tem CPF + anoNasc + valorMercado, não mostra idade
+  const showIdade = !(cpfFmt && anoNascimento && temValor);
+
   return (
     <Link
       href={`/jogadores/${player.id}`}
@@ -167,29 +193,36 @@ export default function Card({ player, onClick }: Props) {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-gray-500 text-[13px] whitespace-nowrap">
-              Idade: {idadeExibida ?? "—"}
-            </span>
-
+          <div className="flex items-center gap-2 min-w-0 flex-auto">
             {anoNascimento && (
               <>
-                <span className="text-gray-300 text-[12px]">•</span>
-                <span className="text-gray-500 text-[13px] whitespace-nowrap">
+                <span className="text-gray-500 text-[13px] whitespace-nowrap flex-none">
                   {anoNascimento}
                 </span>
               </>
+            )}
+
+            {cpfFmt && 
+            (
+              <span
+                className="text-gray-500 text-[13px] whitespace-nowrap"
+                title={`CPF: ${cpfFmt}`}
+              >
+                • CPF: {cpfFmt}
+              </span>
             )}
           </div>
 
           {temValor ? (
             <span
-              className={`inline-flex items-baseline gap-1.5 font-extrabold text-sm leading-none whitespace-nowrap ${valueTextClass}`}
+              className={`inline-flex items-baseline gap-1.5 font-extrabold text-sm leading-none whitespace-nowrap ${valueTextClass} flex-none`}
             >
               {fmtEUR(player.valorMercado)}
             </span>
           ) : (
-            <span className="text-[13px] text-transparent select-none">.</span>
+            <span className="text-[13px] text-transparent select-none flex-none">
+              .
+            </span>
           )}
         </div>
 

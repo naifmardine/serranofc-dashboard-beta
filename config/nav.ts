@@ -101,8 +101,6 @@ export const navGroups: NavGroup[] = [
 
   group("Análise", [
     item("/admin/serrano-ai", "Serrano.AI", Brain, ROLES_ADMIN_ONLY),
-    item("/admin/mercado", "Mercado", LineChart, ROLES_ADMIN_ONLY),
-    item("/admin/projecoes", "Projeções", ClipboardList, ROLES_ADMIN_ONLY),
   ]),
 
   group("Admin", [

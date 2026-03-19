@@ -1,0 +1,4 @@
+{"input":"Diagnóstico do elenco do Serrano","output":{"steps":[{"op":"aggregate","metric":"market_value_mEUR","agg":"sum","filters":{"club":"Serrano FC"}},{"op":"aggregate","metric":"age","agg":"avg","filters":{"club":"Serrano FC"}},{"op":"distribution","group_by":"position_code","filters":{"club":"Serrano FC"}}],"output":{"format":"insight_report"}}}
+{"input":"Onde está concentrado o valor do elenco?","output":{"steps":[{"op":"aggregate","metric":"market_value_mEUR","agg":"sum","group_by":"position_code","filters":{"club":"Serrano FC"}}],"output":{"format":"chart_bar"}}}
+{"input":"Quais posições têm mais jogadores?","output":{"steps":[{"op":"aggregate","metric":"position_code","agg":"count","group_by":"position_code","filters":{"club":"Serrano FC"}}],"output":{"format":"chart_bar"}}}
+{"input":"Qual idade média do elenco?","output":{"steps":[{"op":"aggregate","metric":"age","agg":"avg","filters":{"club":"Serrano FC"}}],"output":{"format":"single_metric"}}}

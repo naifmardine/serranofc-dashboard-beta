@@ -1,0 +1,189 @@
+{
+  "version": "1.1",
+  "notes": [
+    "Este arquivo foca em normalização de entidades conforme filtros e cards do dashboard.",
+    "Clubes e agências são categorias abertas (o banco define o universo). Aqui só guardamos regras e exemplos.",
+    "CPF é dado sensível: não deve ser exposto; usar apenas para lookup interno se autorizado."
+  ],
+  "entities": {
+    "club": {
+      "primary": "Serrano FC",
+      "aliases": ["Serrano", "serrano", "SERRANO FC", "Serrano Futebol Clube"],
+      "normalization_rules": [
+        {
+          "match_any": ["serrano fc", "serrano", "serrano futebol clube", "serrano futebol"],
+          "normalize_to": "Serrano FC"
+        }
+      ],
+      "notes": "O conjunto de clubes é definido pelo banco. Normalizar apenas variações óbvias e manter o valor canônico."
+    },
+    "agency": {
+      "open_set": true,
+      "notes": "Agência é um campo categórico. Pode vir vazio como 'Sem agência'. Não inventar."
+    },
+    "player": {
+      "id_fields": ["player_id", "external_id"],
+      "name_fields": ["full_name", "known_as", "short_name"],
+      "sensitive_fields": ["cpf"],
+      "lookup_policy": {
+        "by_name": "Allow fuzzy search (backend decides), return up to 5 candidates.",
+        "by_cpf": "Only if explicitly needed and permitted; never expose CPF value in output."
+      }
+    },
+    "timeframe": {
+      "types": ["snapshot_date"],
+      "default": "latest_snapshot",
+      "notes": "A UI parece trabalhar com snapshot atual. Se não houver histórico, declarar como snapshot."
+    },
+    "transfer_market_position": {
+      "notes": "7 termos canônicos armazenados na coluna 'atletaPosicao' da tabela Transferencia. O mercado NÃO distingue lado (esquerdo/direito). PE e PD mapeiam para 'ponta'; LD e LE para 'lateral'; MEI e MC para 'meia'.",
+      "canonical_values": ["ponta", "meia", "atacante", "volante", "lateral", "zagueiro", "goleiro"],
+      "mapping_from_serrano_codes": {
+        "PE":  "ponta",
+        "PD":  "ponta",
+        "LD":  "lateral",
+        "LE":  "lateral",
+        "MEI": "meia",
+        "MC":  "meia",
+        "ATA": "atacante",
+        "VOL": "volante",
+        "ZAG": "zagueiro",
+        "GOL": "goleiro"
+      },
+      "collapsed_categories": {
+        "ponta":   ["PE", "PD"],
+        "lateral": ["LD", "LE"],
+        "meia":    ["MEI", "MC"]
+      },
+      "normalization_rules": [
+        {
+          "match_any": ["ponta esquerda", "ponta direita", "ala esquerda", "ala direita",
+                        "extremo esquerdo", "extremo direito", "left winger", "right winger", "pe", "pd"],
+          "normalize_to": "ponta"
+        },
+        {
+          "match_any": ["lateral direito", "lateral esquerdo", "lateral-direito", "lateral-esquerdo",
+                        "right back", "left back", "ld", "le"],
+          "normalize_to": "lateral"
+        },
+        {
+          "match_any": ["meio-campo", "meio campo", "meiocampista", "meio-campista", "meia-campista", "mc", "mei"],
+          "normalize_to": "meia"
+        },
+        {
+          "match_any": ["centroavante", "centro-avante", "striker", "forward", "ata"],
+          "normalize_to": "atacante"
+        },
+        {
+          "match_any": ["segundo volante", "vol"],
+          "normalize_to": "volante"
+        },
+        {
+          "match_any": ["zaga", "zag"],
+          "normalize_to": "zagueiro"
+        },
+        {
+          "match_any": ["goleira", "goalkeeper", "gol"],
+          "normalize_to": "goleiro"
+        }
+      ]
+    }
+  },
+  "position_normalization": {
+    "scheme": "ui_codes",
+    "allowed_codes": ["ATA", "GOL", "LD", "LE", "MC", "MEI", "PD", "PE", "VOL", "ZAG"],
+    "code_to_label_pt": {
+      "ATA": "Atacante",
+      "GOL": "Goleiro",
+      "LD": "Lateral Direito",
+      "LE": "Lateral Esquerdo",
+      "MEI": "Meia",
+      "PD": "Ponta Direita",
+      "PE": "Ponta Esquerda",
+      "VOL": "Volante",
+      "ZAG": "Zagueiro"
+    },
+    "label_pt_to_code": {
+      "atacante": "ATA",
+      "goleiro": "GOL",
+      "lateral direito": "LD",
+      "lateral-esquerdo": "LE",
+      "lateral esquerdo": "LE",
+      "meia": "MEI",
+      "meio-campo": "MEI",
+      "ponta direita": "PD",
+      "ponta-esquerda": "PE",
+      "ponta esquerda": "PE",
+      "volante": "VOL",
+      "zagueiro": "ZAG"
+    },
+    "group_aliases": {
+      "ponta":    ["PE", "PD"],
+      "pontas":   ["PE", "PD"],
+      "lateral":  ["LE", "LD"],
+      "laterais": ["LE", "LD"]
+    },
+    "notes_group": "Para grupos, usar position_code_in com a lista de códigos. NUNCA enviar o alias como position_code_eq — 'ponta' não é um código válido.",
+    "notes": "Sempre normalizar inputs livres para um dos códigos UI.",
+    "transfer_market_note": "Estes códigos (PE, PD, etc.) se aplicam APENAS à tabela Player/elenco. Para a tabela Transferencia (mercado), use os 7 termos em transfer_market_position.canonical_values. PE+PD → 'ponta'; LD+LE → 'lateral'; MEI+MC → 'meia'.",
+    "serrano_to_market_map": {
+      "PE":  "ponta",
+      "PD":  "ponta",
+      "LD":  "lateral",
+      "LE":  "lateral",
+      "MEI": "meia",
+      "MC":  "meia",
+      "ATA": "atacante",
+      "VOL": "volante",
+      "ZAG": "zagueiro",
+      "GOL": "goleiro"
+    }
+  },
+  "boolean_normalization": {
+    "dominant_foot": {
+      "allowed_values": ["RIGHT", "LEFT", "UNKNOWN"],
+      "map": {
+        "direito": "RIGHT",
+        "destro": "RIGHT",
+        "right": "RIGHT",
+        "esquerdo": "LEFT",
+        "canhoto": "LEFT",
+        "left": "LEFT"
+      }
+    },
+    "has_cpf": {
+      "map": {
+        "cadastrado": true,
+        "não cadastrado": false,
+        "nao cadastrado": false
+      },
+      "notes": "Não confundir com o valor do CPF. Só boolean."
+    },
+    "european_passport": {
+      "map": { "sim": true, "não": false, "nao": false, "yes": true, "no": false }
+    },
+    "national_team_called": {
+      "map": { "sim": true, "não": false, "nao": false, "yes": true, "no": false }
+    }
+  },
+  "numeric_ranges": {
+    "age": { "ui_min": 11, "ui_max": 25 },
+    "market_value_mEUR": { "ui_min": 0, "ui_max": 14.25 },
+    "serrano_ownership_pct": { "ui_min": 10, "ui_max": 100 },
+    "height_cm": { "notes": "UI aceita entrada livre. Validar limites no executor (ex.: 140–220) para evitar lixo." }
+  },
+  "ui_filter_fields": [
+    "has_cpf",
+    "european_passport",
+    "national_team_called",
+    "age",
+    "birth_year",
+    "market_value_mEUR",
+    "serrano_ownership_pct",
+    "height_cm",
+    "position_code",
+    "club",
+    "agency",
+    "dominant_foot"
+  ]
+}

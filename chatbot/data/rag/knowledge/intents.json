@@ -1,0 +1,164 @@
+{
+  "version": "1.0",
+  "intents": [
+    {
+      "id": "PLAYER_LOOKUP",
+      "description": "Retrieve a single player profile or a small set of players by name/identifier, returning attributes and summary.",
+      "examples": [
+        "Quem é o João Silva?",
+        "Mostra o perfil do jogador Neymar (se estiver no banco)",
+        "Qual a idade e posição do atleta X?"
+      ],
+      "anti_examples": [
+        "Top 10 jogadores por valor de mercado",
+        "Distribuição do elenco por idade"
+      ],
+      "expected_fields": ["player_query", "scope", "filters"]
+    },
+    {
+      "id": "PLAYER_RANKING",
+      "description": "Rank players by a metric (Top N), optionally with filters (club, age, position).",
+      "examples": [
+        "Top 10 jogadores do Serrano por valor de mercado",
+        "Maiores valores de mercado sub-23",
+        "Top 5 por minutos jogados"
+      ],
+      "anti_examples": [
+        "Quem é o jogador X?",
+        "Qual a distribuição do elenco por posição?"
+      ],
+      "expected_fields": ["metric", "order", "limit", "scope", "filters"]
+    },
+    {
+      "id": "PLAYER_FILTER_LIST",
+      "description": "List players matching constraints (not necessarily ranked). Useful for 'players with X' requests.",
+      "examples": [
+        "Jogadores do Serrano com menos de 20 anos",
+        "Lista todos os zagueiros do Serrano",
+        "Quais jogadores têm nacionalidade brasileira?"
+      ],
+      "anti_examples": [
+        "Top 10 por valor de mercado",
+        "Comparar Serrano com outros clubes"
+      ],
+      "expected_fields": ["filters", "scope", "columns", "limit"]
+    },
+    {
+      "id": "SQUAD_DISTRIBUTION",
+      "description": "Compute distributions of squad attributes (age bands, position, nationality, height bins).",
+      "examples": [
+        "Distribuição do elenco por idade",
+        "Quantos jogadores por posição no Serrano?",
+        "Percentual por nacionalidade"
+      ],
+      "anti_examples": [
+        "Quem é o jogador X?",
+        "Top 10 jogadores por valor"
+      ],
+      "expected_fields": ["group_by", "metric", "scope", "filters", "bins"]
+    },
+    {
+      "id": "SQUAD_SUMMARY_INSIGHTS",
+      "description": "Generate a concise diagnostic summary about the squad using aggregated data, highlighting strengths/weaknesses and risks.",
+      "examples": [
+        "Diagnóstico do elenco do Serrano",
+        "Onde o elenco é mais jovem/mais velho?",
+        "Quais posições estão mais carentes?"
+      ],
+      "anti_examples": [
+        "Top 10 jogadores por valor",
+        "O que significa 'valor de mercado'?"
+      ],
+      "expected_fields": ["scope", "filters", "focus_areas"]
+    },
+    {
+      "id": "CLUB_COMPARISON",
+      "description": "Compare Serrano or another club against peers on aggregated metrics (total market value, average age, depth by position).",
+      "examples": [
+        "Serrano vs média dos clubes em valor total",
+        "Ranking de clubes por valor total do elenco",
+        "Comparar idade média do Serrano com outros"
+      ],
+      "anti_examples": [
+        "Quem é o jogador X?",
+        "O que significa a métrica Y?"
+      ],
+      "expected_fields": ["metric", "peer_set", "scope", "filters", "limit"]
+    },
+    {
+      "id": "MARKET_OVERVIEW",
+      "description": "Market-level analysis across all clubs/players: segments by position/age, valuation landscape, and high-level trends (if time series exists).",
+      "examples": [
+        "Como está o mercado por posição?",
+        "Top posições por valor médio",
+        "Qual faixa de idade concentra mais valor?"
+      ],
+      "anti_examples": [
+        "Perfil do jogador X",
+        "Definição da métrica Y"
+      ],
+      "expected_fields": ["metric", "group_by", "filters", "timeframe"]
+    },
+    {
+      "id": "PLAYER_MARKET_COMPARISON",
+      "description": "Compare a specific Serrano player's value or profile against the general transfer market benchmark for their position and age range. Involves fetching player data from the squad AND market stats from the Transferencia table.",
+      "examples": [
+        "O nosso goleiro está subavaliado?",
+        "Vale a pena vender o Marcos agora baseado no mercado?",
+        "Como o João Silva se compara ao mercado de atacantes?",
+        "Quanto o mercado paga por laterais na faixa etária do Pedro?",
+        "ROI de vender o zagueiro X vs preço de mercado",
+        "Esse meia está acima ou abaixo do mercado?"
+      ],
+      "anti_examples": [
+        "Como está o mercado de pontas em geral?",
+        "Top 10 jogadores por valor de mercado no elenco",
+        "Quantos jogadores temos por posição?"
+      ],
+      "expected_fields": ["player_query", "posicao_mercado", "idade_min", "idade_max"],
+      "tool_sequence": ["player_financial", "transfer_market"],
+      "notes": "CRITICAL: map Serrano position code to market term before calling transfer_market. PE/PD → 'ponta'; LD/LE → 'lateral'; MEI/MC → 'meia'; ATA → 'atacante'; VOL → 'volante'; ZAG → 'zagueiro'; GOL → 'goleiro'. Never pass 'ponta esquerda', 'ponta direita', 'lateral direito' to transfer_market — the Transferencia table only stores the 7 broad terms."
+    },
+    {
+      "id": "POSITION_MARKET_ANALYSIS",
+      "description": "Analyze the transfer market for a football position category, optionally cross-referencing with Serrano's squad at that position. Uses consolidated market terms (the 7 broad Transferencia labels).",
+      "examples": [
+        "Como está o mercado de pontas?",
+        "Quanto vale um meia no mercado atual?",
+        "O mercado de zagueiros jovens está aquecido?",
+        "Como estão nossos volantes vs o mercado?",
+        "Benchmark do mercado para goleiros sub-25",
+        "Vale mais investir em atacantes ou meias no mercado?",
+        "Nossos laterais estão alinhados com o mercado?",
+        "Quanto o mercado paga por atacantes sub-21?"
+      ],
+      "anti_examples": [
+        "Quem é o jogador X?",
+        "Top 10 jogadores do elenco por valor",
+        "Como está nosso elenco como um todo?"
+      ],
+      "expected_fields": ["posicao_mercado", "idade_min", "idade_max", "period_start", "period_end", "moeda"],
+      "tool_sequence": ["position_market_comparison"],
+      "market_positions": ["ponta", "meia", "atacante", "volante", "lateral", "zagueiro", "goleiro"],
+      "notes": "The Transferencia table stores ONLY these 7 position labels. Never query the market with Serrano position codes (PE, PD, etc.) directly — use position_market_comparison which handles the mapping automatically. For PE+PD use 'ponta'; for LD+LE use 'lateral'; for MEI+MC use 'meia'."
+    },
+    {
+      "id": "DEFINITION_HELP",
+      "description": "Explain dataset definitions, metrics, methodology, schema meaning, and limitations. No database aggregation required.",
+      "examples": [
+        "O que significa 'valor de mercado' aqui?",
+        "Como vocês calculam idade?",
+        "De onde vêm os dados?"
+      ],
+      "anti_examples": [
+        "Top 10 por valor de mercado",
+        "Distribuição do elenco por idade"
+      ],
+      "expected_fields": ["term", "context"]
+    }
+  ],
+  "global_defaults": {
+    "scope_default": "SERRANO",
+    "limit_default": 10
+  }
+}

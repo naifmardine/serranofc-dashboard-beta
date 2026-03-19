@@ -1,0 +1,73 @@
+{
+  "version": "1.0",
+  "dsl": {
+    "plan": {
+      "type": "object",
+      "fields": ["steps", "output"],
+      "notes": "A plan is an ordered list of steps. No SQL. Only allowed ops."
+    },
+    "step": {
+      "type": "object",
+      "required": ["op"],
+      "optional": ["filters", "metric", "group_by", "order", "limit", "bins", "columns", "peer_set"]
+    }
+  },
+  "operations": [
+    {
+      "op": "player_profile",
+      "intent": ["PLAYER_LOOKUP"],
+      "description": "Fetch one player profile by name/id.",
+      "required": ["player_query"],
+      "optional": ["filters", "columns"],
+      "limits": { "max_results": 5 }
+    },
+    {
+      "op": "list_players",
+      "intent": ["PLAYER_FILTER_LIST"],
+      "description": "List players that match filters (not ranked).",
+      "required": ["filters"],
+      "optional": ["columns", "limit"],
+      "limits": { "default_limit": 25, "max_limit": 100 }
+    },
+    {
+      "op": "rank_players",
+      "intent": ["PLAYER_RANKING"],
+      "description": "Rank players by a metric with optional filters.",
+      "required": ["metric", "order", "limit"],
+      "optional": ["filters"],
+      "allowed_order": ["asc", "desc"],
+      "limits": { "default_limit": 10, "max_limit": 50 }
+    },
+    {
+      "op": "distribution",
+      "intent": ["SQUAD_DISTRIBUTION", "MARKET_OVERVIEW"],
+      "description": "Compute distribution grouped by a field (or numeric bins).",
+      "required": ["group_by"],
+      "optional": ["filters", "bins", "metric"],
+      "notes": "If group_by is numeric, bins should be provided or defaulted."
+    },
+    {
+      "op": "aggregate",
+      "intent": ["SQUAD_SUMMARY_INSIGHTS", "MARKET_OVERVIEW", "CLUB_COMPARISON"],
+      "description": "Aggregate metrics (avg, sum, min, max, count) with optional group_by.",
+      "required": ["metric", "agg"],
+      "optional": ["group_by", "filters"],
+      "allowed_agg": ["count", "sum", "avg", "min", "max", "median"],
+      "notes": "Median may not be supported depending on SQL templates; backend decides."
+    },
+    {
+      "op": "compare_clubs",
+      "intent": ["CLUB_COMPARISON"],
+      "description": "Compare clubs on an aggregated metric (e.g., total market value, avg age).",
+      "required": ["metric", "agg", "peer_set"],
+      "optional": ["filters", "limit", "order"],
+      "limits": { "default_limit": 10, "max_limit": 30 }
+    }
+  ],
+  "field_allowlist": {
+    "filters": ["club", "position", "age_lte", "age_gte", "nationality", "height_cm_gte", "height_cm_lte"],
+    "metrics": ["market_value", "age", "minutes", "appearances", "goals", "assists", "height_cm", "weight_kg"],
+    "group_by": ["position", "nationality", "club", "age", "height_cm"],
+    "columns": ["full_name", "short_name", "position", "age", "market_value", "nationality", "club"]
+  }
+}
