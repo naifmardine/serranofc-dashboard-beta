@@ -202,7 +202,7 @@ export function ChatHistoryPanel({
                         onClose();
                       }
                     }}
-                    className={`group relative flex w-full cursor-pointer flex-col gap-0.5 rounded-xl border px-3 py-2.5 text-left transition ${
+                    className={`relative flex w-full cursor-pointer flex-col gap-0.5 rounded-xl border px-3 py-2.5 text-left transition ${
                       isActive
                         ? "border-blue-100 bg-blue-50"
                         : "border-transparent hover:bg-gray-50"
@@ -230,14 +230,14 @@ export function ChatHistoryPanel({
                           e.stopPropagation();
                           setConversationToDelete(conv);
                         }}
-                        className="shrink-0 rounded p-0.5 opacity-0 transition group-hover:opacity-100 hover:bg-red-50"
+                        className="p-1.5 rounded-md text-white transition bg-red-500 hover:bg-red-600 shrink-0"
                         title="Deletar conversa"
                         disabled={isDeleting}
                       >
                         {isDeleting ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-red-400" />
+                          <Loader2 size={14} className="animate-spin" />
                         ) : (
-                          <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                          <Trash2 size={14} />
                         )}
                       </button>
                     </div>

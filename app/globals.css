@@ -39,6 +39,11 @@
   @apply w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-[#003399] focus:ring-1 focus:ring-[#003399] bg-white;
 }
 
+/* Fix garantido para group-hover em produção — não depende do scanner do Tailwind */
+.group:hover .group-hover\:opacity-100 {
+  opacity: 1;
+}
+
 body[data-exporting="true"],
 html:has(body[data-exporting="true"]) {
   overflow: visible !important;

@@ -216,7 +216,7 @@ export default function RelatoriosPage() {
                     return (
                       <div
                         key={report.id}
-                        className="group flex items-center gap-3 px-4 py-3 transition hover:bg-gray-50"
+                        className="flex items-center gap-3 px-4 py-3 transition hover:bg-gray-50"
                       >
                         <div
                           className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50"
@@ -234,27 +234,27 @@ export default function RelatoriosPage() {
                           </p>
                         </div>
 
-                        <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+                        <div className="flex items-center gap-1">
                           <button
                             type="button"
                             onClick={() => openRenameModal(report)}
-                            className="rounded-lg p-1.5 text-gray-400 transition hover:bg-blue-50 hover:text-blue-600"
+                            className="p-2 rounded-md text-white transition bg-yellow-500 hover:bg-yellow-600"
                             title="Renomear"
                           >
-                            <Pencil className="h-4 w-4" />
+                            <Pencil size={16} />
                           </button>
 
                           <button
                             type="button"
                             onClick={() => setReportToDelete(report)}
-                            className="rounded-lg p-1.5 text-gray-400 transition hover:bg-red-50 hover:text-red-500"
+                            className="p-2 rounded-md text-white transition bg-red-500 hover:bg-red-600"
                             title="Deletar"
                             disabled={isDeleting}
                           >
                             {isDeleting ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <Loader2 size={16} className="animate-spin" />
                             ) : (
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 size={16} />
                             )}
                           </button>
                         </div>
