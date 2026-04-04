@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../auth/AuthContext";
 import { useI18n } from "@/contexts/I18nContext";
 import LanguageSwitcher from "@/components/Atoms/LanguageSwitcher";
+import TermsPrivacyDialog from "@/components/Atoms/TermsPrivacyDialog";
 
 export default function LoginClient() {
   const router = useRouter();
@@ -16,6 +17,8 @@ export default function LoginClient() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
+  const [termsTab, setTermsTab] = useState<"termos" | "privacidade">("termos");
 
   useEffect(() => {
     if (!loading && user) {
@@ -127,9 +130,31 @@ export default function LoginClient() {
         </button>
 
         <p className="mt-4 text-center text-xs text-gray-600">
-          {t.login.termos}
+          {t.login.termosPrefix}
+          <button
+            type="button"
+            onClick={() => { setTermsTab("termos"); setTermsOpen(true); }}
+            className="underline text-[#5b6cff] hover:text-[#4a59d6] cursor-pointer"
+          >
+            {t.login.termosLink}
+          </button>
+          {t.login.termosConector}
+          <button
+            type="button"
+            onClick={() => { setTermsTab("privacidade"); setTermsOpen(true); }}
+            className="underline text-[#5b6cff] hover:text-[#4a59d6] cursor-pointer"
+          >
+            {t.login.privacidadeLink}
+          </button>
+          {t.login.termosSuffix}
         </p>
       </form>
+
+      <TermsPrivacyDialog
+        open={termsOpen}
+        onClose={() => setTermsOpen(false)}
+        initialTab={termsTab}
+      />
     </div>
   );
 }

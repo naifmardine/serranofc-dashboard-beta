@@ -34,7 +34,32 @@ export interface Translations {
     entrando: string;
     carregando: string;
     erroLogin: string;
-    termos: string;
+    termosPrefix: string;
+    termosLink: string;
+    termosConector: string;
+    privacidadeLink: string;
+    termosSuffix: string;
+  };
+  termosPrivacidade: {
+    titulo: string;
+    termosDeUso: string;
+    politicaPrivacidade: string;
+    fechar: string;
+    termosAtualizacao: string;
+    t1Title: string;
+    t2Title: string;
+    t3Title: string;
+    t4Title: string;
+    t5Title: string;
+    t6Title: string;
+    privacidadeAtualizacao: string;
+    p1Title: string;
+    p2Title: string;
+    p3Title: string;
+    p4Title: string;
+    p5Title: string;
+    p6Title: string;
+    p7Title: string;
   };
   dashboard: {
     title: string;
