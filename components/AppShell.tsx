@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "@/components/Atoms/Sidebar";
+import LanguageSwitcher from "@/components/Atoms/LanguageSwitcher";
 import { useAuth } from "../app/auth/AuthContext";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -27,6 +28,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex">
       <Sidebar />
       <main className="ml-(--sb-width) flex-1 p-4 transition-[margin-left] duration-200 ease-out">
+        <div className="flex justify-end mb-2">
+          <LanguageSwitcher />
+        </div>
         {children}
       </main>
     </div>

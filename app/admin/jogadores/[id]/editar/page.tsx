@@ -9,8 +9,10 @@ import PageTitle from "@/components/Atoms/PageTitle";
 import AdminButton from "@/components/Atoms/AdminButton";
 import SuccessDialog from "@/components/Atoms/SuccessDialog";
 import JogadorForm, { type JogadorFormModel } from "@/components/JogadorForm";
+import { useI18n } from "@/contexts/I18nContext";
 
 export default function EditarJogadorPage() {
+  const { t } = useI18n();
   const params = useParams<{ id: string }>();
   const id = params?.id;
   const router = useRouter();
@@ -52,7 +54,7 @@ export default function EditarJogadorPage() {
       } catch (err: any) {
         if (!active) return;
         console.error(err);
-        setError(err?.message || "Erro ao carregar jogador.");
+        setError(err?.message || t.adminEditarJogador.erroCarregar);
         setForm(null);
       } finally {
         if (active) setLoading(false);
@@ -99,10 +101,10 @@ export default function EditarJogadorPage() {
           null,
       });
 
-      setSuccessMsg("Jogador atualizado com sucesso.");
+      setSuccessMsg(t.adminEditarJogador.jogadorAtualizadoMsg);
     } catch (err: any) {
       console.error(err);
-      setError(err?.message || "Erro ao salvar jogador.");
+      setError(err?.message || t.adminEditarJogador.erroSalvar);
     } finally {
       setSaving(false);
     }
@@ -111,7 +113,7 @@ export default function EditarJogadorPage() {
   if (loading) {
     return (
       <section className="mx-auto w-full max-w-5xl bg-gray-50 p-6">
-        <div className="text-sm text-gray-700">Carregando dados do jogador...</div>
+        <div className="text-sm text-gray-700">{t.adminEditarJogador.carregando}</div>
       </section>
     );
   }
@@ -120,11 +122,11 @@ export default function EditarJogadorPage() {
     return (
       <section className="mx-auto w-full max-w-5xl bg-gray-50 p-6">
         <h1 className="mb-2 text-lg font-bold text-slate-900">
-          Erro ao carregar jogador
+          {t.adminEditarJogador.erroCarregar}
         </h1>
-        <p className="mb-4 text-sm text-red-600">{error || "Erro desconhecido."}</p>
+        <p className="mb-4 text-sm text-red-600">{error || t.adminEditarJogador.erroDesconhecido}</p>
         <Link href="/admin/jogadores" className="text-sm underline text-slate-700">
-          Voltar
+          {t.adminEditarJogador.voltar}
         </Link>
       </section>
     );
@@ -136,13 +138,13 @@ export default function EditarJogadorPage() {
         type="button"
         onClick={() => router.push(`/jogadores/${id}`)}
         className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-gray-50"
-        title="Ver jogador"
+        title={t.adminEditarJogador.verJogador}
       >
         <Eye className="h-4 w-4" />
-        Ver jogador
+        {t.adminEditarJogador.verJogador}
       </button>
 
-      <AdminButton label="Voltar" icon={ArrowLeft} href="/admin/jogadores" />
+      <AdminButton label={t.adminEditarJogador.voltar} icon={ArrowLeft} href="/admin/jogadores" />
     </div>
   );
 
@@ -150,10 +152,10 @@ export default function EditarJogadorPage() {
     <>
       <SuccessDialog
         open={!!successMsg}
-        title="Jogador atualizado"
+        title={t.adminEditarJogador.jogadorAtualizado}
         description={successMsg ?? undefined}
-        secondaryLabel="Continuar editando"
-        primaryLabel="Ver jogador"
+        secondaryLabel={t.adminEditarJogador.continuarEditando}
+        primaryLabel={t.adminEditarJogador.verJogador}
         onSecondary={() => setSuccessMsg(null)}
         onPrimary={() => {
           setSuccessMsg(null);
@@ -164,11 +166,11 @@ export default function EditarJogadorPage() {
       <section className="mx-auto w-full max-w-5xl bg-gray-50 p-6">
         <PageTitle
           base="Admin"
-          title="Editar jogador"
-          subtitle="Atualize dados do jogador e mantenha o vínculo com o clube consistente."
+          title={t.adminEditarJogador.title}
+          subtitle={t.adminEditarJogador.subtitle}
           actions={headerActions}
           className="mb-6"
-          crumbLabel="Jogadores"
+          crumbLabel={t.adminJogadores.title}
         />
 
         {error && (
@@ -182,7 +184,7 @@ export default function EditarJogadorPage() {
           setForm={setForm as any}
           onSubmit={handleSubmit}
           saving={saving}
-          submitLabel={saving ? "Salvando..." : "Salvar jogador"}
+          submitLabel={saving ? t.adminEditarJogador.salvando : t.adminEditarJogador.salvarJogador}
           onCancel={() => router.push("/admin/jogadores")}
           requireClub={false}
         />

@@ -14,28 +14,30 @@ import { buildNameToISO2, MAP_DATA } from "./geoAdapters";
 import { useFitProjection } from "./useFitProjection";
 import { COUNTRY_OPTIONS } from "@/lib/dashboard/geoOptions";
 import { usePlayersDrilldown } from "@/components/PlayersDrilldownProvider";
+import { useI18n } from "@/contexts/I18nContext";
 
 type Props = {
   data: GeoMapData;
   size?: WidgetSize;
 };
 
-function labelFromMode(mode: Mode) {
-  if (mode === "WORLD") return "Mundo";
-  if (mode === "BR") return "Brasil";
-  const map: Record<ContinentCode, string> = {
-    SA: "América do Sul",
-    NA: "América do Norte",
-    EU: "Europa",
-    AF: "África",
-    AS: "Ásia",
-    OC: "Oceania",
-  };
-  return map[mode as ContinentCode] ?? "Mapa";
-}
-
 export default function GeoMapWidget({ data, size = "md" }: Props) {
+  const { t } = useI18n();
   const drill = usePlayersDrilldown();
+
+  function labelFromMode(mode: Mode) {
+    if (mode === "WORLD") return t.geoMap.mundo;
+    if (mode === "BR") return t.geoMap.brasil;
+    const map: Record<ContinentCode, string> = {
+      SA: t.geoMap.americaSul,
+      NA: t.geoMap.americaNorte,
+      EU: t.geoMap.europa,
+      AF: t.geoMap.africa,
+      AS: t.geoMap.asia,
+      OC: t.geoMap.oceania,
+    };
+    return map[mode as ContinentCode] ?? t.geoMap.mapa;
+  }
 
   const [mode, setMode] = useState<Mode>("WORLD");
   const [prevContinent, setPrevContinent] = useState<ContinentCode>("SA"); // voltar do BR
@@ -237,7 +239,7 @@ export default function GeoMapWidget({ data, size = "md" }: Props) {
       <div className="relative h-full w-full">
         <div className="mb-2 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-sm font-semibold text-slate-900">Mapa</div>
+            <div className="text-sm font-semibold text-slate-900">{t.geoMap.mapa}</div>
             <div className="mt-1 text-xs text-gray-500">{subtitleLabel}</div>
           </div>
 
@@ -246,10 +248,10 @@ export default function GeoMapWidget({ data, size = "md" }: Props) {
               type="button"
               onClick={back}
               className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/25 bg-[#003399] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#002774]"
-              title="Voltar"
+              title={t.geoMap.voltar}
             >
               <ArrowLeft size={16} />
-              Voltar
+              {t.geoMap.voltar}
             </button>
           )}
         </div>
@@ -281,12 +283,12 @@ export default function GeoMapWidget({ data, size = "md" }: Props) {
                 }
 
                 void drill.openFromRaw(
-                  `País: ${label} (${iso2})`,
+                  `${t.geoMap.drillPais}: ${label} (${iso2})`,
                   playersByCountry[iso2] ?? [],
                 );
               }}
               onSelectUF={(uf, label) => {
-                void drill.openFromRaw(`UF: ${label} (${uf})`, playersByUF[uf] ?? []);
+                void drill.openFromRaw(`${t.geoMap.drillUf}: ${label} (${uf})`, playersByUF[uf] ?? []);
               }}
             />
           )}

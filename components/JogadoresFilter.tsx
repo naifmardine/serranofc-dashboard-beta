@@ -11,6 +11,7 @@ import {
   SecondaryBlueButton,
 } from "@/components/Atoms/filter/Buttons";
 
+import { useI18n } from "@/contexts/I18nContext";
 import {
   cx,
   buildFilterOptions,
@@ -40,6 +41,7 @@ export default function JogadoresFilter({
   value: JogadoresFilters;
   onChange: (v: JogadoresFilters) => void;
 }) {
+  const { t } = useI18n();
   const options = useMemo(() => buildFilterOptions(jogadores), [jogadores]);
 
   const [draft, setDraft] = useState<JogadoresFilters>(() => ({
@@ -163,8 +165,8 @@ export default function JogadoresFilter({
     const minRaw = parsePtNumber(idadeMinTxt);
     const maxRaw = parsePtNumber(idadeMaxTxt);
 
-    if (idadeMinTxt.trim() && minRaw === null) error = "Idade mínima inválida.";
-    if (idadeMaxTxt.trim() && maxRaw === null) error = "Idade máxima inválida.";
+    if (idadeMinTxt.trim() && minRaw === null) error = t.filter.errors.idadeMinInvalida;
+    if (idadeMaxTxt.trim() && maxRaw === null) error = t.filter.errors.idadeMaxInvalida;
 
     let min = minRaw === null ? undefined : Math.trunc(minRaw);
     let max = maxRaw === null ? undefined : Math.trunc(maxRaw);
@@ -190,8 +192,8 @@ export default function JogadoresFilter({
     const minRaw = parsePtNumber(anoMinTxt);
     const maxRaw = parsePtNumber(anoMaxTxt);
 
-    if (anoMinTxt.trim() && minRaw === null) error = "Ano mínimo inválido.";
-    if (anoMaxTxt.trim() && maxRaw === null) error = "Ano máximo inválido.";
+    if (anoMinTxt.trim() && minRaw === null) error = t.filter.errors.anoMinInvalido;
+    if (anoMaxTxt.trim() && maxRaw === null) error = t.filter.errors.anoMaxInvalido;
 
     let min = minRaw === null ? undefined : Math.trunc(minRaw);
     let max = maxRaw === null ? undefined : Math.trunc(maxRaw);
@@ -220,8 +222,8 @@ export default function JogadoresFilter({
     const minRaw = parsePtNumber(valorMinTxt);
     const maxRaw = parsePtNumber(valorMaxTxt);
 
-    if (valorMinTxt.trim() && minRaw === null) error = "Valor mínimo inválido. Ex: 2,5";
-    if (valorMaxTxt.trim() && maxRaw === null) error = "Valor máximo inválido. Ex: 10";
+    if (valorMinTxt.trim() && minRaw === null) error = t.filter.errors.valorMinInvalido;
+    if (valorMaxTxt.trim() && maxRaw === null) error = t.filter.errors.valorMaxInvalido;
 
     let min = minRaw === null ? undefined : minRaw;
     let max = maxRaw === null ? undefined : maxRaw;
@@ -250,8 +252,8 @@ export default function JogadoresFilter({
     const minRaw = parsePtNumber(posseMinTxt);
     const maxRaw = parsePtNumber(posseMaxTxt);
 
-    if (posseMinTxt.trim() && minRaw === null) error = "% Serrano mínimo inválido.";
-    if (posseMaxTxt.trim() && maxRaw === null) error = "% Serrano máximo inválido.";
+    if (posseMinTxt.trim() && minRaw === null) error = t.filter.errors.posseMinInvalido;
+    if (posseMaxTxt.trim() && maxRaw === null) error = t.filter.errors.posseMaxInvalido;
 
     let min = minRaw === null ? undefined : Math.trunc(minRaw);
     let max = maxRaw === null ? undefined : Math.trunc(maxRaw);
@@ -277,8 +279,8 @@ export default function JogadoresFilter({
     const minRaw = parsePtNumber(alturaMinTxt);
     const maxRaw = parsePtNumber(alturaMaxTxt);
 
-    if (alturaMinTxt.trim() && minRaw === null) error = "Altura mínima inválida.";
-    if (alturaMaxTxt.trim() && maxRaw === null) error = "Altura máxima inválida.";
+    if (alturaMinTxt.trim() && minRaw === null) error = t.filter.errors.alturaMinInvalida;
+    if (alturaMaxTxt.trim() && maxRaw === null) error = t.filter.errors.alturaMaxInvalida;
 
     let min = minRaw === null ? undefined : Math.trunc(minRaw);
     let max = maxRaw === null ? undefined : Math.trunc(maxRaw);
@@ -469,7 +471,7 @@ export default function JogadoresFilter({
         type="button"
         className="fixed inset-0 z-40 bg-black/25"
         onClick={() => onOpenChange(false)}
-        aria-label="Fechar filtros"
+        aria-label={t.filter.fechar}
       />
 
       <aside
@@ -494,8 +496,8 @@ export default function JogadoresFilter({
               </span>
 
               <div>
-                <div className="text-sm font-extrabold text-slate-900">Filtros</div>
-                <div className="text-xs text-slate-500">Refine sua lista de jogadores</div>
+                <div className="text-sm font-extrabold text-slate-900">{t.filter.filtros}</div>
+                <div className="text-xs text-slate-500">{t.filter.refine}</div>
               </div>
             </div>
 
@@ -503,8 +505,8 @@ export default function JogadoresFilter({
               type="button"
               onClick={() => onOpenChange(false)}
               className="cursor-pointer rounded-xl p-2 hover:bg-slate-50"
-              aria-label="Fechar"
-              title="Fechar"
+              aria-label={t.filter.fechar}
+              title={t.filter.fechar}
             >
               <X size={18} className="text-slate-700" />
             </button>
@@ -515,62 +517,62 @@ export default function JogadoresFilter({
         <div className="h-[calc(100%-132px)] overflow-y-auto px-4 py-4 space-y-5">
           {/* Identidade / Cadastro */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
-            <div className="text-sm font-extrabold text-slate-900">CPF</div>
+            <div className="text-sm font-extrabold text-slate-900">{t.filter.cpf}</div>
 
             <div className="flex flex-wrap gap-2">
               <Pill
                 active={draft.cpfCadastrado === "tem"}
                 onClick={() => setCpfMode("tem")}
-                title="Apenas jogadores com CPF preenchido"
+                title={t.filter_cpfCadastradoTitle}
               >
-                Cadastrado
+                {t.filter.cadastrado}
               </Pill>
               <Pill
                 active={draft.cpfCadastrado === "nao_tem"}
                 onClick={() => setCpfMode("nao_tem")}
-                title="Apenas jogadores sem CPF preenchido"
+                title={t.filter_cpfNaoCadastradoTitle}
               >
-                Não Cadastrado
+                {t.filter.naoCadastrado}
               </Pill>
             </div>
           </div>
 
           {/* Passaporte / Seleção */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
-            <div className="text-sm font-extrabold text-slate-900">Status</div>
+            <div className="text-sm font-extrabold text-slate-900">{t.filter.status}</div>
 
             <div className="space-y-2">
-              <div className="text-xs font-semibold text-slate-700">Passaporte europeu</div>
+              <div className="text-xs font-semibold text-slate-700">{t.filter.passaporteEuropeu}</div>
               <div className="flex flex-wrap gap-2">
                 <Pill
                   active={draft.passaporteEuropeu === "sim"}
                   onClick={() => setYesNo("passaporteEuropeu", "sim")}
                 >
-                  Sim
+                  {t.filter.sim}
                 </Pill>
                 <Pill
                   active={draft.passaporteEuropeu === "nao"}
                   onClick={() => setYesNo("passaporteEuropeu", "nao")}
                 >
-                  Não
+                  {t.filter.nao}
                 </Pill>
               </div>
             </div>
 
             <div className="space-y-2">
-              <div className="text-xs font-semibold text-slate-700">Convocado para seleção</div>
+              <div className="text-xs font-semibold text-slate-700">{t.filter.convocadoSelecao}</div>
               <div className="flex flex-wrap gap-2">
                 <Pill
                   active={draft.convocadoSelecao === "sim"}
                   onClick={() => setYesNo("convocadoSelecao", "sim")}
                 >
-                  Sim
+                  {t.filter.sim}
                 </Pill>
                 <Pill
                   active={draft.convocadoSelecao === "nao"}
                   onClick={() => setYesNo("convocadoSelecao", "nao")}
                 >
-                  Não
+                  {t.filter.nao}
                 </Pill>
               </div>
             </div>
@@ -579,7 +581,7 @@ export default function JogadoresFilter({
           {/* Faixa: idade / ano nasc */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <div className="text-sm font-extrabold text-slate-900">Faixa</div>
+              <div className="text-sm font-extrabold text-slate-900">{t.filter.faixa}</div>
 
               <div className="inline-flex rounded-2xl border border-slate-200 bg-white p-1">
                 <button
@@ -597,7 +599,7 @@ export default function JogadoresFilter({
                       : undefined
                   }
                 >
-                  Idade
+                  {t.filter.idade}
                 </button>
 
                 <button
@@ -615,7 +617,7 @@ export default function JogadoresFilter({
                       : undefined
                   }
                 >
-                  Ano Nasc.
+                  {t.filter.anoNasc}
                 </button>
               </div>
             </div>
@@ -623,7 +625,7 @@ export default function JogadoresFilter({
             {(draft.ageMode ?? "idade") === "idade" ? (
               <>
                 <div className="mb-3 text-xs text-slate-500">
-                  Range:{" "}
+                  {t.filter.range}{" "}
                   <span className="font-extrabold text-slate-700">
                     {options.idadeMin}–{options.idadeMax}
                   </span>
@@ -631,7 +633,7 @@ export default function JogadoresFilter({
 
                 <div className="grid grid-cols-2 gap-2">
                   <label className="text-xs text-slate-600">
-                    Min
+                    {t.filter.min}
                     <input
                       inputMode="numeric"
                       value={idadeMinTxt}
@@ -643,7 +645,7 @@ export default function JogadoresFilter({
                   </label>
 
                   <label className="text-xs text-slate-600">
-                    Max
+                    {t.filter.max}
                     <input
                       inputMode="numeric"
                       value={idadeMaxTxt}
@@ -660,7 +662,7 @@ export default function JogadoresFilter({
             ) : (
               <>
                 <div className="mb-3 text-xs text-slate-500">
-                  Range:{" "}
+                  {t.filter.range}{" "}
                   <span className="font-extrabold text-slate-700">
                     {options.anoMin || "—"}–{options.anoMax || "—"}
                   </span>
@@ -668,25 +670,25 @@ export default function JogadoresFilter({
 
                 <div className="grid grid-cols-2 gap-2">
                   <label className="text-xs text-slate-600">
-                    Min
+                    {t.filter.min}
                     <input
                       inputMode="numeric"
                       value={anoMinTxt}
                       onChange={(e) => setAnoMinTxt(e.target.value)}
                       onBlur={normalizeAnoFromText}
-                      placeholder={options.anoMin ? String(options.anoMin) : "Ex: 2001"}
+                      placeholder={options.anoMin ? String(options.anoMin) : t.filter.exAnoMin}
                       className="mt-1 h-9 w-full rounded-xl border border-slate-200 px-2 text-sm outline-none focus:ring-2 focus:ring-slate-200"
                     />
                   </label>
 
                   <label className="text-xs text-slate-600">
-                    Max
+                    {t.filter.max}
                     <input
                       inputMode="numeric"
                       value={anoMaxTxt}
                       onChange={(e) => setAnoMaxTxt(e.target.value)}
                       onBlur={normalizeAnoFromText}
-                      placeholder={options.anoMax ? String(options.anoMax) : "Ex: 2007"}
+                      placeholder={options.anoMax ? String(options.anoMax) : t.filter.exAnoMax}
                       className="mt-1 h-9 w-full rounded-xl border border-slate-200 px-2 text-sm outline-none focus:ring-2 focus:ring-slate-200"
                     />
                   </label>
@@ -700,19 +702,19 @@ export default function JogadoresFilter({
           {/* Valor de mercado */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <div className="text-sm font-extrabold text-slate-900">Valor de mercado</div>
+              <div className="text-sm font-extrabold text-slate-900">{t.filter.valorMercado}</div>
 
               <Pill
                 active={!!draft.valorSemDefinicao}
                 onClick={toggleValorSemDefinicao}
-                title="Filtrar apenas jogadores com valorMercado = 0 ou sem valor"
+                title={t.filter_valorSemTitle}
               >
-                Sem valor
+                {t.filter.semValor}
               </Pill>
             </div>
 
             <div className="mb-3 text-xs text-slate-500">
-              Unidade: <span className="font-extrabold text-slate-700">milhões (EUR)</span>{" "}
+              {t.filter.unidade} <span className="font-extrabold text-slate-700">{t.filter.milhoesEur}</span>{" "}
               — ex: <span className="font-extrabold text-slate-700">2,5</span> ={" "}
               <span className="font-extrabold text-slate-700">
                 {moneyEURfromMilhoes(2.5)}
@@ -721,7 +723,7 @@ export default function JogadoresFilter({
 
             <div className={cx("grid grid-cols-2 gap-2", draft.valorSemDefinicao && "opacity-60")}>
               <label className="text-xs text-slate-600">
-                Min (mi)
+                {t.filter.minMi}
                 <input
                   disabled={!!draft.valorSemDefinicao}
                   inputMode="decimal"
@@ -734,7 +736,7 @@ export default function JogadoresFilter({
               </label>
 
               <label className="text-xs text-slate-600">
-                Max (mi)
+                {t.filter.maxMi}
                 <input
                   disabled={!!draft.valorSemDefinicao}
                   inputMode="decimal"
@@ -755,19 +757,19 @@ export default function JogadoresFilter({
           {/* % Serrano */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <div className="text-sm font-extrabold text-slate-900">% Serrano</div>
+              <div className="text-sm font-extrabold text-slate-900">{t.filter.posseSerrano}</div>
 
               <Pill
                 active={!!draft.posseSemDefinicao}
                 onClick={togglePosseSemDefinicao}
-                title="Filtrar apenas jogadores sem posse (% Serrano) cadastrada"
+                title={t.filter_posseSemTitle}
               >
-                Sem posse
+                {t.filter.semPosse}
               </Pill>
             </div>
 
             <div className="mb-3 text-xs text-slate-500">
-              Unidade: <span className="font-extrabold text-slate-700">%</span> — range típico{" "}
+              {t.filter.unidade} <span className="font-extrabold text-slate-700">%</span> — {t.filter.range}{" "}
               <span className="font-extrabold text-slate-700">
                 {options.posseMin ?? 0}–{options.posseMax ?? 100}
               </span>
@@ -775,7 +777,7 @@ export default function JogadoresFilter({
 
             <div className={cx("grid grid-cols-2 gap-2", draft.posseSemDefinicao && "opacity-60")}>
               <label className="text-xs text-slate-600">
-                Min (%)
+                {t.filter.minPct}
                 <input
                   disabled={!!draft.posseSemDefinicao}
                   inputMode="numeric"
@@ -788,7 +790,7 @@ export default function JogadoresFilter({
               </label>
 
               <label className="text-xs text-slate-600">
-                Max (%)
+                {t.filter.maxPct}
                 <input
                   disabled={!!draft.posseSemDefinicao}
                   inputMode="numeric"
@@ -809,22 +811,22 @@ export default function JogadoresFilter({
           {/* Altura */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-2 flex items-center justify-between gap-2">
-              <div className="text-sm font-extrabold text-slate-900">Altura</div>
+              <div className="text-sm font-extrabold text-slate-900">{t.filter.altura}</div>
 
               <Pill
                 active={!!draft.alturaSemDefinicao}
                 onClick={toggleAlturaSemDefinicao}
-                title="Filtrar apenas jogadores sem altura cadastrada"
+                title={t.filter_alturaSemTitle}
               >
-                Sem altura
+                {t.filter.semAltura}
               </Pill>
             </div>
 
             <div className="mb-3 text-xs text-slate-500">
-              Unidade: <span className="font-extrabold text-slate-700">cm</span>{" "}
+              {t.filter.unidade} <span className="font-extrabold text-slate-700">cm</span>{" "}
               {options.alturaMin && options.alturaMax ? (
                 <>
-                  — range{" "}
+                  — {t.filter.range}{" "}
                   <span className="font-extrabold text-slate-700">
                     {options.alturaMin}–{options.alturaMax}
                   </span>
@@ -834,27 +836,27 @@ export default function JogadoresFilter({
 
             <div className={cx("grid grid-cols-2 gap-2", draft.alturaSemDefinicao && "opacity-60")}>
               <label className="text-xs text-slate-600">
-                Min (cm)
+                {t.filter.minCm}
                 <input
                   disabled={!!draft.alturaSemDefinicao}
                   inputMode="numeric"
                   value={alturaMinTxt}
                   onChange={(e) => setAlturaMinTxt(e.target.value)}
                   onBlur={normalizeAlturaFromText}
-                  placeholder={options.alturaMin ? String(options.alturaMin) : "Ex: 170"}
+                  placeholder={options.alturaMin ? String(options.alturaMin) : t.filter.exMin}
                   className="mt-1 h-9 w-full rounded-xl border border-slate-200 px-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 disabled:bg-slate-50"
                 />
               </label>
 
               <label className="text-xs text-slate-600">
-                Max (cm)
+                {t.filter.maxCm}
                 <input
                   disabled={!!draft.alturaSemDefinicao}
                   inputMode="numeric"
                   value={alturaMaxTxt}
                   onChange={(e) => setAlturaMaxTxt(e.target.value)}
                   onBlur={normalizeAlturaFromText}
-                  placeholder={options.alturaMax ? String(options.alturaMax) : "Ex: 195"}
+                  placeholder={options.alturaMax ? String(options.alturaMax) : t.filter.exMax}
                   className="mt-1 h-9 w-full rounded-xl border border-slate-200 px-2 text-sm outline-none focus:ring-2 focus:ring-slate-200 disabled:bg-slate-50"
                 />
               </label>
@@ -867,7 +869,7 @@ export default function JogadoresFilter({
 
           {/* Posição */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-3 text-sm font-extrabold text-slate-900">Posição</div>
+            <div className="mb-3 text-sm font-extrabold text-slate-900">{t.filter.posicao}</div>
             <div className="flex flex-wrap gap-2">
               {options.posicoes.slice(0, 60).map((p) => (
                 <Pill
@@ -885,12 +887,12 @@ export default function JogadoresFilter({
           {/* Clube */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <MultiSelectSearch
-              label="Clube"
-              placeholder="Buscar clube…"
+              label={t.filter.clube}
+              placeholder={t.filter.buscarClube}
               options={options.clubesRich}
               selected={draft.clubes}
               onChange={(next) => setDraft((prev) => ({ ...prev, clubes: next }))}
-              emptyLabel="Nenhum clube encontrado"
+              emptyLabel={t.filter.nenhumClubeEncontrado}
               renderOption={(opt, active) => (
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
@@ -915,7 +917,7 @@ export default function JogadoresFilter({
                       active ? "text-slate-900" : "text-slate-400",
                     )}
                   >
-                    {active ? "Selecionado" : ""}
+                    {active ? t.filter.selecionado : ""}
                   </span>
                 </div>
               )}
@@ -925,7 +927,7 @@ export default function JogadoresFilter({
           {/* Agência */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-extrabold text-slate-900">Agência</div>
+              <div className="text-sm font-extrabold text-slate-900">{t.filter.agencia}</div>
 
               <Pill
                 active={hasNoneAgency}
@@ -938,13 +940,13 @@ export default function JogadoresFilter({
                   }))
                 }
               >
-                Sem agência
+                {t.filter.semAgencia}
               </Pill>
             </div>
 
             <MultiSelectSearch
               label=""
-              placeholder="Buscar agência…"
+              placeholder={t.filter.buscarAgencia}
               options={options.agencias}
               selected={draft.agencias.filter((x) => x !== NONE_AGENCY)}
               onChange={(next) =>
@@ -953,17 +955,17 @@ export default function JogadoresFilter({
                   agencias: [...next, ...(prev.agencias.includes(NONE_AGENCY) ? [NONE_AGENCY] : [])],
                 }))
               }
-              emptyLabel="Nenhuma agência encontrada"
+              emptyLabel={t.filter.nenhumaAgenciaEncontrada}
             />
           </div>
 
           {/* Pé dominante */}
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-3 text-sm font-extrabold text-slate-900">Pé dominante</div>
+            <div className="mb-3 text-sm font-extrabold text-slate-900">{t.filter.peDominante}</div>
             <div className="flex gap-2">
               {[
-                { key: "D", label: "Direito" },
-                { key: "E", label: "Esquerdo" },
+                { key: "D", label: t.filter.direito },
+                { key: "E", label: t.filter.esquerdo },
               ].map((p) => (
                 <Pill
                   key={p.key}
@@ -979,8 +981,8 @@ export default function JogadoresFilter({
 
         {/* Footer */}
         <div className="border-t border-slate-100 px-4 py-4 flex items-center justify-between gap-2 bg-white">
-          <SecondaryBlueButton onClick={clearAll}>Limpar tudo</SecondaryBlueButton>
-          <PrimaryBlueButton onClick={apply}>Aplicar</PrimaryBlueButton>
+          <SecondaryBlueButton onClick={clearAll}>{t.filter.limpar}</SecondaryBlueButton>
+          <PrimaryBlueButton onClick={apply}>{t.filter.aplicar}</PrimaryBlueButton>
         </div>
 
         <style jsx>{`

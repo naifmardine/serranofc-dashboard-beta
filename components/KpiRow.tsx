@@ -3,6 +3,7 @@
 import type { KpisApiResponse, WidgetScope } from "@/type/dashboard";
 import { formatCurrency, formatNumber } from "@/lib/dashboard/format";
 import { Info } from "lucide-react";
+import { useI18n } from "@/contexts/I18nContext";
 
 type Props = {
   data?: KpisApiResponse | null;
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export function KpiRow({ data, loading, scope }: Props) {
+  const { t } = useI18n();
   const kpis = data?.ok ? data.kpis : null;
 
   const showSerrano = scope === "serrano" || scope === "both";
@@ -19,60 +21,60 @@ export function KpiRow({ data, loading, scope }: Props) {
   return (
     <div className="space-y-6">
       {showSerrano && (
-        <KpiSection title="Indicadores Serrano">
+        <KpiSection title={t.kpi.indicadoresSerrano}>
           <KpiCard
-            title="Jogadores do Serrano"
+            title={t.kpi.jogadoresSerrano}
             value={loading ? null : (kpis?.["serrano.players_count"]?.value ?? null)}
-            hint="Quantidade total de jogadores cadastrados no elenco/base do Serrano."
+            hint={t.kpi.jogadoresSerranoHint}
           />
           <KpiCard
-            title="Valor de mercado total"
+            title={t.kpi.valorMercadoTotal}
             value={loading ? null : (kpis?.["serrano.total_market_value"]?.value ?? null)}
             unit="EUR"
-            hint="Soma do valor de mercado de todos os jogadores do Serrano."
+            hint={t.kpi.valorMercadoTotalHint}
           />
           <KpiCard
-            title="Idade média"
+            title={t.kpi.idadeMedia}
             value={loading ? null : (kpis?.["serrano.avg_age"]?.value ?? null)}
-            hint="Média das idades dos jogadores do Serrano."
+            hint={t.kpi.idadeMediaHint}
           />
           <KpiCard
-            title="Valor atribuído ao Serrano"
+            title={t.kpi.valorAtribuidoSerrano}
             value={
               loading
                 ? null
                 : (kpis?.["serrano.total_market_value_weighted"]?.value ?? null)
             }
             unit="EUR"
-            hint="Soma do valor de mercado ponderado pelo % (possePct) do Serrano em cada jogador."
+            hint={t.kpi.valorAtribuidoSerranoHint}
           />
         </KpiSection>
       )}
 
       {showMarket && (
-        <KpiSection title="Indicadores Mercado">
+        <KpiSection title={t.kpi.indicadoresMercado}>
           <KpiCard
-            title="Transações no mercado"
+            title={t.kpi.transacoesMercado}
             value={loading ? null : (kpis?.["market.deals_count"]?.value ?? null)}
-            hint="Total de transferências registradas no mercado."
+            hint={t.kpi.transacoesMercadoHint}
           />
           <KpiCard
-            title="Volume financeiro do mercado"
+            title={t.kpi.volumeFinanceiro}
             value={loading ? null : (kpis?.["market.total_fee"]?.value ?? null)}
             unit="EUR"
-            hint="Soma dos valores (fees) de todas as transferências no mercado."
+            hint={t.kpi.volumeFinanceiroHint}
           />
           <KpiCard
-            title="Ticket médio"
+            title={t.kpi.ticketMedio}
             value={loading ? null : (kpis?.["market.avg_fee"]?.value ?? null)}
             unit="EUR"
-            hint="Média do valor (fee) por transferência no mercado."
+            hint={t.kpi.ticketMedioHint}
           />
           <KpiCard
-            title="Transações/mês"
+            title={t.kpi.transacoesMes}
             value={loading ? null : (kpis?.["market.deals_per_month"]?.value ?? null)}
             decimals={1}
-            hint="Total de transferências dividido pelo número de meses distintos com dados."
+            hint={t.kpi.transacoesMesHint}
           />
         </KpiSection>
       )}
@@ -184,7 +186,7 @@ function InfoTooltip({ text }: { text: string }) {
     <div className="relative group shrink-0">
       <button
         type="button"
-        aria-label="Informações"
+        aria-label="Info"
         className={[
           "inline-flex h-5 w-5 items-center justify-center rounded-md",
           "text-slate-400 hover:text-slate-600",

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useI18n } from "@/contexts/I18nContext";
 
 export default function ConfirmDeleteDialog({
   open,
-  title = "Confirmar deleção",
+  title,
   description,
   expectedPhrase,
   itemName,
@@ -19,6 +20,7 @@ export default function ConfirmDeleteDialog({
   onCancel: () => void;
   onConfirm: () => Promise<void> | void;
 }) {
+  const { t } = useI18n();
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export default function ConfirmDeleteDialog({
       <div className="absolute inset-0 grid place-items-center px-4">
         <div className="w-full max-w-[520px] rounded-2xl border border-gray-200 bg-white shadow-[0_18px_60px_rgba(0,0,0,0.18)] overflow-hidden">
           <div className="p-4 border-b border-gray-200">
-            <div className="text-sm font-extrabold text-slate-900">{title}</div>
+            <div className="text-sm font-extrabold text-slate-900">{title || t.confirmDelete.titulo}</div>
             {description && (
               <div className="mt-1 text-xs text-gray-600">{description}</div>
             )}
@@ -61,14 +63,14 @@ export default function ConfirmDeleteDialog({
             {itemName && (
               <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
                 <div className="text-[11px] uppercase tracking-wider text-gray-500">
-                  Você está deletando
+                  {t.confirmDelete.voceEstaDeletando}
                 </div>
                 <div className="text-sm font-bold text-slate-900">{itemName}</div>
               </div>
             )}
 
             <div className="text-xs text-gray-600">
-              Para confirmar, digite exatamente:
+              {t.confirmDelete.paraConfirmar}
               <div className="mt-1 font-extrabold text-red-700 select-all">
                 {expectedPhrase}
               </div>
@@ -79,7 +81,7 @@ export default function ConfirmDeleteDialog({
               onChange={(e) => setText(e.target.value)}
               disabled={loading}
               className="w-full rounded-[10px] border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500/25 focus:border-red-500 placeholder:text-gray-400"
-              placeholder="Digite aqui..."
+              placeholder={t.confirmDelete.digiteAqui}
               autoFocus
             />
 
@@ -99,7 +101,7 @@ export default function ConfirmDeleteDialog({
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 disabled:opacity-60"
               disabled={loading}
             >
-              Cancelar
+              {t.confirmDelete.cancelar}
             </button>
 
             <button
@@ -111,14 +113,14 @@ export default function ConfirmDeleteDialog({
                   setErr(null);
                   await onConfirm();
                 } catch (e: any) {
-                  setErr(e?.message ?? "Erro ao deletar.");
+                  setErr(e?.message ?? t.confirmDelete.erroDeletar);
                 } finally {
                   setLoading(false);
                 }
               }}
               className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {loading ? "Deletando..." : "Deletar"}
+              {loading ? t.confirmDelete.deletando : t.confirmDelete.deletar}
             </button>
           </div>
         </div>

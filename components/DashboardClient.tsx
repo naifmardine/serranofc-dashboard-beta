@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useI18n } from "@/contexts/I18nContext";
 import { DashboardHeader } from "./DashboardHeader";
 import { DashboardGrid } from "./DashboardGrid";
 import { WidgetPickerDrawer } from "./WidgetPickerDrawer";
 import { KpiRow } from "./KpiRow";
 
-import { WIDGETS } from "@/lib/dashboard/widgetDefinitions";
+import { getLocalizedWidgets } from "@/lib/dashboard/widgetDefinitions";
 import {
   DEFAULT_DASHBOARD_LAYOUT,
   buildPresetLayout,
@@ -36,6 +37,7 @@ type WidgetState = {
 const uniq = <T,>(arr: T[]) => Array.from(new Set(arr));
 
 export function DashboardClient() {
+  const { t } = useI18n();
   const [layout, setLayout] = useState<DashboardLayout>(DEFAULT_DASHBOARD_LAYOUT);
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -67,9 +69,10 @@ export function DashboardClient() {
   const dataScope: WidgetScope = useMemo(() => viewToDataScope(layout.view), [layout.view]);
 
   // ---------- catalog (SEM KPIs) ----------
+  const WIDGETS = useMemo(() => getLocalizedWidgets(t), [t]);
   const widgetsCatalog: WidgetDefinition[] = useMemo(() => {
     return WIDGETS.filter((w) => !w.id.startsWith("kpi."));
-  }, []);
+  }, [WIDGETS]);
 
   // ---------- enabled + ordered ----------
   const enabledWidgets = useMemo(() => {
@@ -103,7 +106,7 @@ export function DashboardClient() {
         if (!cancelled) setKpis(json);
       } catch (err: any) {
         if (ctrl.signal.aborted) return;
-        if (!cancelled) setKpis({ ok: false, error: "Erro ao carregar KPIs." } as any);
+        if (!cancelled) setKpis({ ok: false, error: t.dashboardClient.erroKpis } as any);
       } finally {
         if (!cancelled) setKpisLoading(false);
       }
@@ -167,7 +170,7 @@ export function DashboardClient() {
             data: {
               ok: false,
               widgetId: id as any,
-              error: "Erro ao carregar widget.",
+              error: t.dashboardClient.erroWidget,
             },
           },
         }));
@@ -235,19 +238,21 @@ const handleExport = useCallback(() => {
 
     // header/footer no estilo igual ao de Jogadores
     header: {
-      title: "Dashboard",
+      title: t.dashboard.title,
       subtitle:
         layout.view === "serrano"
-          ? "Serrano"
+          ? t.dashboard.serrano
           : layout.view === "market"
-            ? "Mercado"
+            ? t.dashboard.mercado
             : layout.view === "both"
-              ? "Ambos"
-              : "Comparativo",
+              ? t.dashboard.ambos
+              : t.dashboard.comparativo,
       rightText: new Date().toISOString().slice(0, 10),
     },
     footer: {
-      leftText: "Serrano FC",
+      leftText: t.sidebar.serranFC,
+      pageLabel: t.pdfExport.pagina,
+      ofLabel: t.pdfExport.de,
     },
   }).finally(() => {
     cleanup?.();

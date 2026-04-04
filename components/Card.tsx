@@ -2,6 +2,7 @@
 
 import type { Jogador } from "../type/jogador";
 import Link from "next/link";
+import { useI18n } from "@/contexts/I18nContext";
 
 const FALLBACK_DOM =
   'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="%23F2CD00"/></svg>';
@@ -48,19 +49,8 @@ function calcAgeFromYear(year?: number | null) {
 }
 
 function PosicaoLabel({ p }: { p: Jogador["posicao"] }) {
-  const map: Record<Jogador["posicao"], string> = {
-    GOL: "Goleiro",
-    LD: "Lateral Direito",
-    ZAG: "Zagueiro",
-    LE: "Lateral Esquerdo",
-    VOL: "Volante",
-    MC: "Meio-Campo",
-    MEI: "Meia",
-    PD: "Ponta Direita",
-    PE: "Ponta Esquerda",
-    ATA: "Atacante",
-  };
-  return <>{map[p]}</>;
+  const { t } = useI18n();
+  return <>{(t.positions as any)[p] ?? p}</>;
 }
 
 function Initials({ name }: { name: string }) {
@@ -77,6 +67,7 @@ function Initials({ name }: { name: string }) {
 type Props = { player: Jogador; onClick?: (id: string) => void };
 
 export default function Card({ player, onClick }: Props) {
+  const { t } = useI18n();
   const temValor = Number(player.valorMercado) > 0;
 
   const hasPosse =
@@ -131,7 +122,7 @@ export default function Card({ player, onClick }: Props) {
     <Link
       href={`/jogadores/${player.id}`}
       className="block text-inherit no-underline group"
-      aria-label={`Ver detalhes de ${player.nome}`}
+      aria-label={`${t.cardAriaVerDetalhes} ${player.nome}`}
       onClick={() => onClick?.(player.id)}
     >
       <article
@@ -169,7 +160,7 @@ export default function Card({ player, onClick }: Props) {
 
           <div
             className="inline-flex items-center gap-0.5 flex-none"
-            title={`Pé dominante: ${player.peDominante}`}
+            title={`${t.foot.dominante}: ${player.peDominante}`}
           >
             <img
               src={leftFootSrc}

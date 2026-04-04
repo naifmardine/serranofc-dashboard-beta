@@ -7,6 +7,7 @@ import PageTitle from "@/components/Atoms/PageTitle";
 import AdminRow from "@/components/AdminRow";
 import AdminButton from "@/components/Atoms/AdminButton";
 import ConfirmDeleteDialog from "@/components/Atoms/ConfirmDeleteDialog";
+import { useI18n } from "@/contexts/I18nContext";
 
 type ClubRow = {
   id: string;
@@ -19,25 +20,8 @@ type ClubRow = {
   continentCode?: string | null;
 };
 
-async function api<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
-  });
-
-  if (!res.ok) {
-    let msg = "Erro inesperado.";
-    try {
-      const data = await res.json();
-      msg = data?.error || msg;
-    } catch {}
-    throw new Error(msg);
-  }
-
-  return res.json() as Promise<T>;
-}
-
 export default function ClubesClient({ initialClubs }: { initialClubs: ClubRow[] }) {
+  const { t } = useI18n();
   const [clubs, setClubs] = React.useState<ClubRow[]>(initialClubs);
   const [delOpen, setDelOpen] = React.useState(false);
   const [delTarget, setDelTarget] = React.useState<ClubRow | null>(null);
@@ -56,24 +40,37 @@ export default function ClubesClient({ initialClubs }: { initialClubs: ClubRow[]
     if (!delTarget?.id) return;
 
     try {
-      await api(`/api/clubs/${delTarget.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/clubs/${delTarget.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) {
+        let msg = t.adminClubes.erroInesperado;
+        try {
+          const data = await res.json();
+          msg = data?.error || msg;
+        } catch {}
+        throw new Error(msg);
+      }
+
       setClubs((prev) => prev.filter((c) => c.id !== delTarget.id));
       closeDelete();
     } catch (e: any) {
-      alert(e?.message || "Erro ao excluir.");
+      alert(e?.message || t.adminClubes.erroExcluir);
     }
   }
 
   const headerActions = (
-    <AdminButton label="Novo Clube" icon={PlusCircle} href="/admin/clubes/novo" />
+    <AdminButton label={t.adminClubes.novoClube} icon={PlusCircle} href="/admin/clubes/novo" />
   );
 
   return (
     <section className="mx-auto w-full max-w-6xl bg-gray-50 p-6">
       <ConfirmDeleteDialog
         open={delOpen}
-        title="Deletar clube"
-        description="Isso é irreversível. Jogadores vinculados ficarão com clubeId nulo."
+        title={t.adminClubes.deletarTitle}
+        description={t.adminClubes.deletarDesc}
         itemName={delTarget?.nome ?? ""}
         expectedPhrase={expectedPhrase}
         onCancel={closeDelete}
@@ -82,28 +79,28 @@ export default function ClubesClient({ initialClubs }: { initialClubs: ClubRow[]
 
       <PageTitle
         base="Admin"
-        title="Clubes"
-        subtitle="Gerencie os clubes cadastrados e crie novos registros."
+        title={t.adminClubes.title}
+        subtitle={t.adminClubes.subtitle}
         actions={headerActions}
         className="mb-6"
-        crumbLabel="Clubes"
+        crumbLabel={t.adminClubes.title}
       />
 
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
         {/* Head */}
         <div className="grid grid-cols-[0.4fr_1.6fr_1fr_1fr_0.7fr] border-b border-gray-200 bg-gray-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-700">
           <span />
-          <span>Clube</span>
-          <span>Local</span>
-          <span>Criado em</span>
-          <span className="pr-1 text-right">Ações</span>
+          <span>{t.adminClubes.clube}</span>
+          <span>{t.adminClubes.local}</span>
+          <span>{t.adminClubes.criadoEm}</span>
+          <span className="pr-1 text-right">{t.adminClubes.acoes}</span>
         </div>
 
         {/* Rows */}
         <div className="divide-y divide-gray-100">
           {clubs.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-gray-500">
-              Nenhum clube cadastrado ainda.
+              {t.adminClubes.nenhumClube}
             </div>
           ) : (
             clubs.map((c) => {

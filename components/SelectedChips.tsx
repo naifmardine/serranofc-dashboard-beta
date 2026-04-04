@@ -1,6 +1,7 @@
 "use client";
 
 import { WidgetDefinition, WidgetId } from "@/type/dashboard";
+import { useI18n } from "@/contexts/I18nContext";
 
 type Props = {
   selected: WidgetId[];
@@ -15,6 +16,7 @@ type Props = {
  * - evita "liguei mas não sei onde está"
  */
 export function SelectedChips({ selected, widgets, onRemove }: Props) {
+  const { t } = useI18n();
   if (!selected.length) return null;
 
   const map = new Map(widgets.map((w) => [w.id, w]));
@@ -22,7 +24,7 @@ export function SelectedChips({ selected, widgets, onRemove }: Props) {
   return (
     <div className="px-4 py-3 border-b border-slate-100">
       <div className="mb-2 text-xs font-medium text-slate-500">
-        Selecionados ({selected.length})
+        {t.widgetPicker.selecionados} ({selected.length})
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -39,7 +41,7 @@ export function SelectedChips({ selected, widgets, onRemove }: Props) {
               <button
                 onClick={() => onRemove(id)}
                 className="text-slate-500 hover:text-slate-900"
-                aria-label={`Remover ${w.title}`}
+                aria-label={`${t.widgetPicker.removerWidget} ${w.title}`}
               >
                 ×
               </button>

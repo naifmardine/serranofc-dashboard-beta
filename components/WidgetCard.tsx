@@ -7,6 +7,7 @@ import type {
 } from "@/type/dashboard";
 import { WidgetRenderer } from "./WidgetRenderer";
 import { EmptyState } from "./EmptyState";
+import { useI18n } from "@/contexts/I18nContext";
 
 type Props = {
   widget: WidgetDefinition;
@@ -33,6 +34,7 @@ export function WidgetCard({
   size,
   onSizeChange,
 }: Props) {
+  const { t } = useI18n();
   const isMap = isGeoMapWidget(widget);
 
   const effectiveSize: WidgetSize = isMap ? "lg" : size;
@@ -70,14 +72,14 @@ export function WidgetCard({
 
         {!loading && data && data.ok === false && (
           <EmptyState
-            title="Erro"
-            description={data.error ?? "Erro desconhecido"}
+            title={t.widgetCard.erro}
+            description={data.error ?? t.widgetCard.erroDesconhecido}
           />
         )}
 
         {!loading && data?.ok && data.payload.kind === "empty" && (
           <EmptyState
-            title="Sem dados"
+            title={t.widgetCard.semDados}
             description={data.payload.reason}
             hint={data.payload.hint}
           />
@@ -118,7 +120,7 @@ function SizeToggle({
         "rounded-lg border border-slate-200 bg-white p-1",
         "shadow-sm",
       ].join(" ")}
-      aria-label="Tamanho do widget"
+      aria-label="Widget size"
     >
       {items.map((it) => {
         const active = it.id === value;

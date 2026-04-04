@@ -17,12 +17,14 @@ import { Role } from "@prisma/client";
 export interface NavItem {
   to: string;
   label: string;
+  labelKey: string;
   icon: LucideIcon;
   roles: Role[];
 }
 
 export interface NavGroup {
   label: string;
+  labelKey: string;
   items: NavItem[];
 }
 
@@ -39,12 +41,12 @@ const R = {
 const ROLES_BOTH: Role[] = [R.CLIENT, R.ADMIN];
 const ROLES_ADMIN_ONLY: Role[] = [R.ADMIN];
 
-function item(to: string, label: string, icon: LucideIcon, roles: Role[]): NavItem {
-  return { to, label, icon, roles };
+function item(to: string, label: string, labelKey: string, icon: LucideIcon, roles: Role[]): NavItem {
+  return { to, label, labelKey, icon, roles };
 }
 
-function group(label: string, items: NavItem[]): NavGroup {
-  return { label, items };
+function group(label: string, labelKey: string, items: NavItem[]): NavGroup {
+  return { label, labelKey, items };
 }
 
 /**
@@ -92,22 +94,22 @@ function devValidateNav(groups: NavGroup[]) {
 }
 
 export const navGroups: NavGroup[] = [
-  group("Principal", [
-    item("/perfil", "Perfil", IdCard, ROLES_BOTH),
-    item("/dashboard", "Dashboard", Home, ROLES_BOTH),
-    item("/jogadores", "Jogadores", Users, ROLES_BOTH),
-    item("/relatorios", "Relatórios", FileBarChart, ROLES_BOTH),
+  group("Principal", "principal", [
+    item("/perfil", "Perfil", "perfil", IdCard, ROLES_BOTH),
+    item("/dashboard", "Dashboard", "dashboard", Home, ROLES_BOTH),
+    item("/jogadores", "Jogadores", "jogadores", Users, ROLES_BOTH),
+    item("/relatorios", "Relatórios", "relatorios", FileBarChart, ROLES_BOTH),
   ]),
 
-  group("Análise", [
-    item("/admin/serrano-ai", "Serrano.AI", Brain, ROLES_ADMIN_ONLY),
+  group("Análise", "analise", [
+    item("/admin/serrano-ai", "Serrano.AI", "serranoAi", Brain, ROLES_ADMIN_ONLY),
   ]),
 
-  group("Admin", [
-    item("/admin/jogadores", "Alterar Jogadores", Users, ROLES_ADMIN_ONLY),
-    item("/admin/clubes", "Clubes", Shield, ROLES_ADMIN_ONLY),
-    item("/admin/transferencias", "Transferências", Banknote, ROLES_ADMIN_ONLY),
-    item("/admin/usuarios", "Usuários", UserCircle2, ROLES_ADMIN_ONLY),
+  group("Admin", "admin", [
+    item("/admin/jogadores", "Alterar Jogadores", "alterarJogadores", Users, ROLES_ADMIN_ONLY),
+    item("/admin/clubes", "Clubes", "clubes", Shield, ROLES_ADMIN_ONLY),
+    item("/admin/transferencias", "Transferências", "transferencias", Banknote, ROLES_ADMIN_ONLY),
+    item("/admin/usuarios", "Usuários", "usuarios", UserCircle2, ROLES_ADMIN_ONLY),
   ]),
 ];
 

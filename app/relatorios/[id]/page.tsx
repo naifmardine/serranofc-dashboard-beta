@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useI18n } from "@/contexts/I18nContext";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -36,6 +37,7 @@ function formatDate(iso: string) {
 }
 
 export default function ReportDetailPage() {
+  const { t } = useI18n();
   const params = useParams<{ id: string }>();
 
   const [report, setReport] = useState<Report | null>(null);
@@ -53,7 +55,7 @@ export default function ReportDetailPage() {
         return r.json();
       })
       .then((d) => setReport(d.report))
-      .catch(() => setError("Relatório não encontrado."))
+      .catch(() => setError(t.relatorioDetail.naoEncontrado))
       .finally(() => setLoading(false));
   }, [params?.id]);
 
@@ -77,8 +79,10 @@ export default function ReportDetailPage() {
         rightText: formatDate(report.createdAt),
       },
       footer: {
-        leftText: "Serrano FC · Confidencial",
+        leftText: t.relatorioDetail.confidencial,
         rightText: "Serrano AI",
+        pageLabel: t.pdfExport.pagina,
+        ofLabel: t.pdfExport.de,
       },
     });
   }
@@ -90,7 +94,7 @@ export default function ReportDetailPage() {
         className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-gray-50"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        Relatórios
+        {t.relatorioDetail.relatorios}
       </Link>
 
       {report && (
@@ -98,7 +102,7 @@ export default function ReportDetailPage() {
           onClick={handleExportPdf}
           loading={exporting}
           disabled={exporting}
-          subtitle="Baixar relatório"
+          subtitle={t.relatorioDetail.baixarRelatorio}
         />
       )}
     </div>
@@ -109,13 +113,13 @@ export default function ReportDetailPage() {
       <section className="w-full bg-gray-50 p-6">
         <div className="mx-auto w-full max-w-5xl">
           <PageTitle
-            base="Principal"
-            title="Carregando…"
-            crumbLabel="Relatórios"
+            base={t.common.principal}
+            title={t.relatorioDetail.carregando}
+            crumbLabel={t.relatorioDetail.relatorios}
           />
           <div className="mt-6 flex items-center justify-center gap-2 py-16 text-sm text-gray-500">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Carregando relatório…
+            {t.relatorioDetail.carregandoRelatorio}
           </div>
         </div>
       </section>
@@ -126,13 +130,13 @@ export default function ReportDetailPage() {
     return (
       <section className="w-full bg-gray-50 p-6">
         <div className="mx-auto w-full max-w-5xl">
-          <PageTitle base="Principal" title="Erro" crumbLabel="Relatórios" />
+          <PageTitle base={t.common.principal} title={t.relatorioDetail.erro} crumbLabel={t.relatorioDetail.relatorios} />
           <div className="mt-6 max-w-lg rounded-2xl border border-red-200 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm">
             <div className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 h-4 w-4 text-red-500" />
               <div>
                 <div className="font-semibold text-red-600">
-                  Relatório não encontrado
+                  {t.relatorioDetail.naoEncontrado}
                 </div>
                 <div className="mt-0.5 text-slate-700">{error}</div>
               </div>
@@ -147,8 +151,8 @@ export default function ReportDetailPage() {
     <section className="w-full bg-gray-50 p-6">
       <div className="mx-auto w-full max-w-5xl">
         <PageTitle
-          base="Principal"
-          crumbLabel="Relatórios"
+          base={t.common.principal}
+          crumbLabel={t.relatorioDetail.relatorios}
           title={report.title}
           subtitle={formatDate(report.createdAt)}
           actions={headerActions}
@@ -299,7 +303,7 @@ export default function ReportDetailPage() {
             </div>
 
             <div className="mt-10 flex items-center justify-between border-t border-gray-100 pt-4">
-              <p className="text-xs text-gray-400">Serrano FC · Confidencial</p>
+              <p className="text-xs text-gray-400">{t.relatorioDetail.confidencial}</p>
               <p className="text-xs text-gray-400">
                 {formatDate(report.createdAt)}
               </p>

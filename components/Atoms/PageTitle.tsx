@@ -1,8 +1,9 @@
 "use client";
 
 import React from "react";
+import { useI18n } from "@/contexts/I18nContext";
 
-type CrumbBase = "Principal" | "Admin";
+type CrumbBase = string;
 
 type Props = {
   title: string;
@@ -25,7 +26,7 @@ type Props = {
 
 export default function PageTitle({
   title,
-  base = "Principal",
+  base,
   subtitle,
   centerActions,
   rightActions,
@@ -33,6 +34,8 @@ export default function PageTitle({
   crumbLabel,
   className,
 }: Props) {
+  const { t } = useI18n();
+  const resolvedBase = base ?? t.common.principal;
   const pageLabel = crumbLabel ?? title;
   const resolvedRight = rightActions ?? actions;
 
@@ -45,7 +48,7 @@ export default function PageTitle({
       >
         <span className="inline-flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full bg-[#003399]" />
-          <span>{base}</span>
+          <span>{resolvedBase}</span>
         </span>
 
         <span className="text-slate-500">›</span>
@@ -71,7 +74,7 @@ export default function PageTitle({
               </h1>
               <span className="hidden h-6 w-px bg-slate-200 sm:inline-block" />
               <span className="hidden text-sm font-medium text-slate-500 sm:inline">
-                Dashboard Serrano
+                {t.sidebar.serranFC}
               </span>
             </div>
 

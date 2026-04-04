@@ -69,6 +69,8 @@ export interface Jogador {
 
   altura?: number | null;
   situacao?: string | null;
+  contratoInicio?: string | null;
+  contratoFim?: string | null;
   possePct?: number | null;
 
   createdAt?: string;

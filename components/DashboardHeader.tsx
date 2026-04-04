@@ -4,6 +4,7 @@ import { LayoutGrid } from "lucide-react";
 import PageTitle from "@/components/Atoms/PageTitle";
 import type { DashboardView } from "@/type/dashboard";
 import ExportPrintButton from "@/components/ExportPrintButton";
+import { useI18n } from "@/contexts/I18nContext";
 
 const SERRANO_BLUE = "#003399";
 
@@ -18,11 +19,11 @@ type Props = {
   exportError?: string | null;
 };
 
-const TABS: Array<{ id: DashboardView; label: string }> = [
-  { id: "serrano", label: "Serrano" },
-  { id: "market", label: "Mercado" },
-  { id: "both", label: "Ambos" },
-  { id: "compare", label: "Comparativo" },
+const TAB_KEYS: Array<{ id: DashboardView; key: "serrano" | "mercado" | "ambos" | "comparativo" }> = [
+  { id: "serrano", key: "serrano" },
+  { id: "market", key: "mercado" },
+  { id: "both", key: "ambos" },
+  { id: "compare", key: "comparativo" },
 ];
 
 export function DashboardHeader({
@@ -34,6 +35,7 @@ export function DashboardHeader({
   exportDisabled,
   exportError,
 }: Props) {
+  const { t } = useI18n();
   const disabled = !!exporting || !!exportDisabled;
 
   const actions = (
@@ -51,13 +53,13 @@ export function DashboardHeader({
         {/* RIGHT: Tabs + Widgets */}
         <div className="ml-auto flex flex-wrap items-center gap-3">
           <div className="inline-flex w-fit rounded-xl border border-slate-200 bg-white p-1">
-            {TABS.map((t) => {
-              const active = t.id === view;
+            {TAB_KEYS.map((tab) => {
+              const active = tab.id === view;
               return (
                 <button
-                  key={t.id}
+                  key={tab.id}
                   type="button"
-                  onClick={() => onViewChange(t.id)}
+                  onClick={() => onViewChange(tab.id)}
                   className={[
                     "rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer",
                     active ? "text-white" : "text-slate-700 hover:bg-slate-50",
@@ -65,7 +67,7 @@ export function DashboardHeader({
                   style={active ? { backgroundColor: SERRANO_BLUE } : undefined}
                   aria-pressed={active}
                 >
-                  {t.label}
+                  {(t.dashboard as any)[tab.key]}
                 </button>
               );
             })}
@@ -75,22 +77,22 @@ export function DashboardHeader({
             type="button"
             onClick={onOpenPicker}
             className="inline-flex items-center cursor-pointer gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 shadow-sm transition hover:bg-slate-50"
-            title="Escolher widgets"
+            title={t.dashboard_escolherWidgets}
             data-no-export="true"
           >
             <LayoutGrid size={18} />
-            Widgets
+            {t.dashboard.widgets}
           </button>
         </div>
       </div>
 
       {exportError ? (
         <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
-          Falha ao exportar: {exportError}
+          {t.dashboard.falhaExportar}: {exportError}
         </div>
       ) : null}
     </div>
   );
 
-  return <PageTitle base="Principal" title="Dashboard" actions={actions} />;
+  return <PageTitle base={t.common.principal} title={t.dashboard.title} actions={actions} />;
 }

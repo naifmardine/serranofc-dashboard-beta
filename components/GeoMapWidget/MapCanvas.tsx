@@ -3,6 +3,7 @@
 
 import React from "react";
 import { ComposableMap, Geographies, Geography } from "@vnedyalk0v/react19-simple-maps";
+import { useI18n } from "@/contexts/I18nContext";
 import type { GeoProjection } from "d3-geo";
 
 import type { ContinentCode, Mode } from "./geoAdapters";
@@ -58,29 +59,8 @@ function normalizeContinentCode(x: unknown): ContinentCode | null {
   return null;
 }
 
-function continentLabelPT(code: ContinentCode) {
-  switch (code) {
-    case "SA":
-      return "América do Sul";
-    case "NA":
-      return "América do Norte";
-    case "EU":
-      return "Europa";
-    case "AF":
-      return "África";
-    case "AS":
-      return "Ásia";
-    case "OC":
-      return "Oceania";
-  }
-}
-
-function pickContinentLabel(_geo: any, cont: ContinentCode | null) {
-  if (cont) return continentLabelPT(cont);
-  return "Continente";
-}
-
 export default function MapCanvas(props: Props) {
+  const { t } = useI18n();
   const {
     mode,
     box,
@@ -104,7 +84,7 @@ export default function MapCanvas(props: Props) {
   if (!geoData) {
     return (
       <div className="grid h-full w-full place-items-center text-sm text-gray-500">
-        Mapa indisponível para o modo:{" "}
+        {t.mapCanvas.mapaIndisponivel}{" "}
         <span className="font-semibold">{String(mode)}</span>
       </div>
     );
@@ -140,9 +120,17 @@ export default function MapCanvas(props: Props) {
               const hasPlayers = !!cont && continentsWithPlayers.has(cont);
               const clickable = hasPlayers;
 
-              const title = pickContinentLabel(geo, cont);
-              const subtitle = hasPlayers ? "Clique para abrir" : "Sem jogadores";
-              const hint = hasPlayers ? "Abrir países" : "Indisponível";
+              const continentMap: Record<ContinentCode, string> = {
+                SA: t.geoMap.americaSul,
+                NA: t.geoMap.americaNorte,
+                EU: t.geoMap.europa,
+                AF: t.geoMap.africa,
+                AS: t.geoMap.asia,
+                OC: t.geoMap.oceania,
+              };
+              const title = cont ? continentMap[cont] : t.mapCanvas.continente;
+              const subtitle = hasPlayers ? t.mapCanvas.cliqueAbrir : t.mapCanvas.semJogadores;
+              const hint = hasPlayers ? t.mapCanvas.abrirPaises : t.mapCanvas.indisponivel;
 
               return (
                 <Geography
@@ -187,8 +175,8 @@ export default function MapCanvas(props: Props) {
               const count = iso2 ? (byCountry[iso2] ?? 0) : 0;
               const clickable = !!iso2 && countriesWithPlayers.has(iso2);
 
-              const subtitle = `${count} jogador${count === 1 ? "" : "es"}`;
-              const hint = clickable ? "Clique para ver jogadores" : "Sem jogadores";
+              const subtitle = `${count} ${count === 1 ? t.mapCanvas.jogador : t.mapCanvas.jogadores}`;
+              const hint = clickable ? t.mapCanvas.cliqueVerJogadores : t.mapCanvas.semJogadores;
 
               return (
                 <Geography
@@ -231,8 +219,8 @@ export default function MapCanvas(props: Props) {
             const count = uf ? (byUF[uf] ?? 0) : 0;
             const clickable = !!uf && ufsWithPlayers.has(uf);
 
-            const subtitle = `${count} jogador${count === 1 ? "" : "es"}`;
-            const hint = clickable ? "Clique para ver jogadores" : "Sem jogadores";
+            const subtitle = `${count} ${count === 1 ? t.mapCanvas.jogador : t.mapCanvas.jogadores}`;
+            const hint = clickable ? t.mapCanvas.cliqueVerJogadores : t.mapCanvas.semJogadores;
 
             return (
               <Geography

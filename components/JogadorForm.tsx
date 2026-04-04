@@ -8,6 +8,7 @@ import AdminSectionCard from "@/components/Atoms/AdminSectionCard";
 import FormField from "@/components/Atoms/FormField";
 import ClubSelect from "@/components/Atoms/ClubSelect";
 import ImageUploadButton from "@/components/Atoms/ImageUploadButton";
+import { useI18n } from "@/contexts/I18nContext";
 
 const POSICOES: Posicao[] = [
   "GOL",
@@ -22,23 +23,7 @@ const POSICOES: Posicao[] = [
   "ATA",
 ];
 
-const POSICAO_LABEL: Record<Posicao, string> = {
-  GOL: "Goleiro",
-  LD: "Lateral Direito",
-  ZAG: "Zagueiro",
-  LE: "Lateral Esquerdo",
-  VOL: "Volante",
-  MC: "Meio-Campo",
-  MEI: "Meia",
-  PD: "Ponta Direita",
-  PE: "Ponta Esquerda",
-  ATA: "Atacante",
-};
-
-const PE_LABEL: Record<Pe, string> = {
-  D: "Direito",
-  E: "Esquerdo",
-};
+// Position and foot labels are now i18n — see t.positions.* and t.foot.*
 
 const INPUT_CLASSES =
   "rounded-[10px] border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm " +
@@ -99,10 +84,11 @@ export default function JogadorForm({
   onSubmit,
   saving,
   submitLabel,
-  cancelLabel = "Cancelar",
+  cancelLabel,
   onCancel,
   requireClub = false,
 }: Props) {
+  const { t } = useI18n();
   const [newSeasonYear, setNewSeasonYear] = useState<string>("");
 
   function updateField(field: string, value: any) {
@@ -226,9 +212,9 @@ export default function JogadorForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
-      <AdminSectionCard title="Dados básicos">
+      <AdminSectionCard title={t.form.dadosBasicos}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <FormField label="Nome do jogador">
+          <FormField label={t.form.nomeJogador}>
             <input
               className={INPUT_CLASSES}
               value={form.nome ?? ""}
@@ -237,7 +223,7 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="CPF">
+          <FormField label={t.form.cpf}>
             <input
               className={INPUT_CLASSES}
               value={formatCPF((form as any).cpf ?? "")}
@@ -249,7 +235,7 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="Clube atual (cadastro)">
+          <FormField label={t.form.clubeAtual}>
             <div className="space-y-2">
               <ClubSelect
                 value={(form as any).clubeId ?? null}
@@ -257,13 +243,13 @@ export default function JogadorForm({
                   updateField("clubeId", club?.id ?? null);
                   updateField("clube", club?.nome ?? "");
                 }}
-                placeholder="Selecione um clube..."
+                placeholder={t.form.selecioneClube}
                 allowClear={!requireClub}
               />
             </div>
           </FormField>
 
-          <FormField label="Ano de nascimento">
+          <FormField label={t.form.anoNascimento}>
             <input
               type="number"
               className={INPUT_CLASSES}
@@ -275,7 +261,7 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="Idade (calculada)">
+          <FormField label={t.form.idadeCalc}>
             <input
               className={INPUT_CLASSES + " bg-gray-50 text-gray-600"}
               value={idadeCalc ?? ""}
@@ -285,34 +271,34 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="Posição">
+          <FormField label={t.form.posicao}>
             <select
               className={INPUT_CLASSES}
               value={form.posicao ?? ""}
               onChange={handleSelectChange("posicao")}
             >
-              <option value="">Selecione...</option>
+              <option value="">{t.form.selecione}</option>
               {POSICOES.map((p) => (
                 <option key={p} value={p}>
-                  {p} — {POSICAO_LABEL[p]}
+                  {p} — {(t.positions as any)[p] ?? p}
                 </option>
               ))}
             </select>
           </FormField>
 
-          <FormField label="Pé dominante">
+          <FormField label={t.form.peDominante}>
             <select
               className={INPUT_CLASSES}
               value={form.peDominante ?? ""}
               onChange={handleSelectChange("peDominante")}
             >
-              <option value="">Selecione...</option>
-              <option value="D">{PE_LABEL.D}</option>
-              <option value="E">{PE_LABEL.E}</option>
+              <option value="">{t.form.selecione}</option>
+              <option value="D">{t.foot.D}</option>
+              <option value="E">{t.foot.E}</option>
             </select>
           </FormField>
 
-          <FormField label="Valor de mercado (em milhões de €)">
+          <FormField label={t.form.valorMercado}>
             <input
               type="number"
               step="0.01"
@@ -323,7 +309,7 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="% Serrano (posse)">
+          <FormField label={t.form.posseSerrano}>
             <input
               type="number"
               step="1"
@@ -334,7 +320,7 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="Representação / agência">
+          <FormField label={t.form.representacao}>
             <input
               className={INPUT_CLASSES}
               value={(form as any).representacao ?? ""}
@@ -343,16 +329,46 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="Situação contratual">
+          <FormField label={t.form.contratoInicio}>
             <input
+              type="date"
               className={INPUT_CLASSES}
-              value={form.situacao ?? ""}
-              onChange={handleTextChange("situacao")}
-              placeholder="Ex.: Empréstimo até 06/2026"
+              value={(form as any).contratoInicio ? (form as any).contratoInicio.slice(0, 10) : ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                updateField("contratoInicio", v ? new Date(v + "T00:00:00").toISOString() : null);
+              }}
             />
           </FormField>
 
-          <FormField label="Número da camisa">
+          <FormField label={t.form.contratoFim}>
+            <div className="space-y-2">
+              <input
+                type="date"
+                className={INPUT_CLASSES + ((form as any)._contratoVigente ? " opacity-50" : "")}
+                value={(form as any).contratoFim ? (form as any).contratoFim.slice(0, 10) : ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  updateField("contratoFim", v ? new Date(v + "T00:00:00").toISOString() : null);
+                }}
+                disabled={!!(form as any)._contratoVigente}
+              />
+              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!(form as any)._contratoVigente}
+                  onChange={(e) => {
+                    updateField("_contratoVigente", e.target.checked);
+                    if (e.target.checked) updateField("contratoFim", null);
+                  }}
+                  className="accent-[#003399]"
+                />
+                {t.form.contratoVigente}
+              </label>
+            </div>
+          </FormField>
+
+          <FormField label={t.form.numeroCamisa}>
             <input
               type="number"
               className={INPUT_CLASSES}
@@ -362,7 +378,7 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="Altura (cm)">
+          <FormField label={t.form.altura}>
             <input
               type="number"
               className={INPUT_CLASSES}
@@ -374,9 +390,9 @@ export default function JogadorForm({
         </div>
       </AdminSectionCard>
 
-      <AdminSectionCard title="Dados complementares">
+      <AdminSectionCard title={t.form.dadosComplementares}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <FormField label="Cidade">
+          <FormField label={t.form.cidade}>
             <input
               className={INPUT_CLASSES}
               value={form.cidade ?? ""}
@@ -385,7 +401,7 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="Nacionalidade">
+          <FormField label={t.form.nacionalidade}>
             <input
               className={INPUT_CLASSES}
               value={form.nacionalidade ?? ""}
@@ -395,7 +411,7 @@ export default function JogadorForm({
           </FormField>
         </div>
 
-        <FormField label="Observações / racional de prospecção">
+        <FormField label={t.form.observacoes}>
           <textarea
             rows={3}
             className={INPUT_CLASSES + " resize-none"}
@@ -406,9 +422,9 @@ export default function JogadorForm({
         </FormField>
       </AdminSectionCard>
 
-      <AdminSectionCard title="Mídia & redes">
+      <AdminSectionCard title={t.form.midiaRedes}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <FormField label="Foto do jogador (upload)">
+          <FormField label={t.form.fotoJogador}>
             <ImageUploadButton
               valueUrl={form.imagemUrl ?? ""}
               onUploaded={({ secureUrl }) => updateField("imagemUrl", secureUrl)}
@@ -416,7 +432,7 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="URL do vídeo (YouTube)">
+          <FormField label={t.form.urlVideo}>
             <input
               className={INPUT_CLASSES}
               value={form.videoUrl ?? ""}
@@ -425,7 +441,7 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="Instagram (@handle)">
+          <FormField label={t.form.instagram}>
             <input
               className={INPUT_CLASSES}
               value={form.instagramHandle ?? ""}
@@ -434,7 +450,7 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="X (Twitter) URL">
+          <FormField label={t.form.xTwitter}>
             <input
               className={INPUT_CLASSES}
               value={form.xUrl ?? ""}
@@ -443,7 +459,7 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="YouTube URL (canal ou playlist)">
+          <FormField label={t.form.youtubeUrl}>
             <input
               className={INPUT_CLASSES}
               value={form.youtubeUrl ?? ""}
@@ -456,11 +472,10 @@ export default function JogadorForm({
 
       <div className="rounded-2xl border border-gray-200 bg-white p-4 space-y-4">
         <h2 className="text-sm font-semibold text-gray-800">
-          Estatísticas por temporada
+          {t.form.estatisticas}
         </h2>
         <p className="text-xs text-gray-500">
-          Gols, assistências e partidas por ano. Esses dados alimentam o bloco
-          &quot;Resumo&quot; na página pública do jogador.
+          {t.form.estatisticasDesc}
         </p>
 
         <div className="space-y-3">
@@ -471,11 +486,11 @@ export default function JogadorForm({
               key={seasonKey}
               className="grid grid-cols-1 gap-2 md:grid-cols-[90px_repeat(3,minmax(0,1fr))_auto] items-end"
             >
-              <FormField label="Temporada">
+              <FormField label={t.form.temporada}>
                 <input className="input" value={seasonKey} readOnly />
               </FormField>
 
-              <FormField label="Gols">
+              <FormField label={t.form.gols}>
                 <input
                   type="number"
                   min={0}
@@ -485,7 +500,7 @@ export default function JogadorForm({
                 />
               </FormField>
 
-              <FormField label="Assistências">
+              <FormField label={t.form.assistencias}>
                 <input
                   type="number"
                   min={0}
@@ -495,7 +510,7 @@ export default function JogadorForm({
                 />
               </FormField>
 
-              <FormField label="Partidas">
+              <FormField label={t.form.partidas}>
                 <input
                   type="number"
                   min={0}
@@ -510,20 +525,20 @@ export default function JogadorForm({
                 onClick={() => handleRemoveSeason(seasonKey)}
                 className="mt-4 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 cursor-pointer"
               >
-                Remover
+                {t.form.remover}
               </button>
             </div>
           ))}
 
           {statsCount === 0 && (
             <p className="text-xs text-gray-500">
-              Nenhuma temporada cadastrada ainda.
+              {t.form.nenhumaTemporada}
             </p>
           )}
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-[160px_auto] items-end">
-          <FormField label="Nova temporada (ex: 2024)">
+          <FormField label={t.form.novaTemporada}>
             <input
               className="input"
               value={newSeasonYear}
@@ -537,14 +552,14 @@ export default function JogadorForm({
             onClick={handleAddSeason}
             className="h-[38px] rounded-lg bg-[#f2d249] px-4 text-sm font-semibold text-black shadow-sm hover:bg-[#e2c23f] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
-            Adicionar temporada
+            {t.form.adicionarTemporada}
           </button>
         </div>
       </div>
 
-      <AdminSectionCard title="Passaporte & Seleção">
+      <AdminSectionCard title={t.form.passaporteSelecao}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <FormField label="Passaporte europeu?">
+          <FormField label={t.form.passaporteEuropeu}>
             <select
               className={INPUT_CLASSES}
               value={
@@ -565,13 +580,13 @@ export default function JogadorForm({
                 }
               }}
             >
-              <option value="">Não informado</option>
-              <option value="true">Sim</option>
-              <option value="false">Não</option>
+              <option value="">{t.form.naoInformado}</option>
+              <option value="true">{t.form.sim}</option>
+              <option value="false">{t.form.nao}</option>
             </select>
           </FormField>
 
-          <FormField label="País do passaporte europeu">
+          <FormField label={t.form.paisPassaporte}>
             <input
               className={INPUT_CLASSES}
               value={form.passaporte?.pais ?? ""}
@@ -585,7 +600,7 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="Convocado para seleção?">
+          <FormField label={t.form.convocadoSelecao}>
             <select
               className={INPUT_CLASSES}
               value={
@@ -607,13 +622,13 @@ export default function JogadorForm({
                 }
               }}
             >
-              <option value="">Não informado</option>
-              <option value="true">Sim</option>
-              <option value="false">Não</option>
+              <option value="">{t.form.naoInformado}</option>
+              <option value="true">{t.form.sim}</option>
+              <option value="false">{t.form.nao}</option>
             </select>
           </FormField>
 
-          <FormField label="Anos de convocação (separados por vírgula)">
+          <FormField label={t.form.anosConvocacao}>
             <input
               className={INPUT_CLASSES}
               placeholder="2023, 2024..."
@@ -635,7 +650,7 @@ export default function JogadorForm({
             />
           </FormField>
 
-          <FormField label="Categoria (Sub-20, Principal...)">
+          <FormField label={t.form.categoria}>
             <input
               className={INPUT_CLASSES}
               value={form.selecao?.categoria ?? ""}
@@ -658,7 +673,7 @@ export default function JogadorForm({
           onClick={onCancel}
           className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100"
         >
-          {cancelLabel}
+          {cancelLabel ?? t.form.cancelar}
         </button>
 
         <button
@@ -666,7 +681,7 @@ export default function JogadorForm({
           disabled={!!saving}
           className="rounded-lg bg-[#f2d249] px-4 py-2 text-sm font-semibold text-black shadow-sm hover:bg-[#e2c23f] disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {saving ? "Salvando..." : submitLabel}
+          {saving ? t.form.salvando : submitLabel}
         </button>
       </div>
     </form>

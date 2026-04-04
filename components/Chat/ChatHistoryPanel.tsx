@@ -10,6 +10,7 @@ import {
   Plus,
 } from "lucide-react";
 import ConfirmDeleteDialog from "../Atoms/ConfirmDeleteDialog";
+import { useI18n } from "@/contexts/I18nContext";
 
 const SERRANO_BLUE = "#003399";
 
@@ -29,25 +30,29 @@ interface ChatHistoryPanelProps {
   onNewChat: () => void;
 }
 
-function formatDate(iso: string) {
-  const date = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+function useFormatDate() {
+  const { t } = useI18n();
 
-  if (diffDays === 0) {
-    return date.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
+  return function formatDate(iso: string) {
+    const date = new Date(iso);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return date.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+    if (diffDays === 1) return t.chatHistory.ontem;
+    if (diffDays < 7) return `${diffDays} ${t.chatHistory.diasAtras}`;
+
+    return date.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "short",
     });
-  }
-  if (diffDays === 1) return "Ontem";
-  if (diffDays < 7) return `${diffDays} dias atrás`;
-
-  return date.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-  });
+  };
 }
 
 export function ChatHistoryPanel({
@@ -57,6 +62,8 @@ export function ChatHistoryPanel({
   onSelectConversation,
   onNewChat,
 }: ChatHistoryPanelProps) {
+  const { t } = useI18n();
+  const formatDate = useFormatDate();
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -67,7 +74,7 @@ export function ChatHistoryPanel({
     setLoading(true);
     try {
       const r = await fetch("/api/chats");
-      if (!r.ok) throw new Error("Não foi possível carregar as conversas.");
+      if (!r.ok) throw new Error(t.chatHistory.erroCarregar);
 
       const { conversations: convs } = await r.json();
       setConversations(convs || []);
@@ -76,7 +83,7 @@ export function ChatHistoryPanel({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (open) fetchConversations();
@@ -94,13 +101,11 @@ export function ChatHistoryPanel({
       });
 
       if (!response.ok) {
-        let message = "Erro ao deletar a conversa.";
+        let message = t.chatHistory.erroDeletar;
         try {
           const data = await response.json();
           if (data?.error) message = data.error;
-        } catch {
-          // mantém mensagem padrão
-        }
+        } catch {}
         throw new Error(message);
       }
 
@@ -135,14 +140,14 @@ export function ChatHistoryPanel({
               className="h-4 w-4 shrink-0"
               style={{ color: SERRANO_BLUE }}
             />
-            <span className="text-sm font-bold text-slate-800">Histórico</span>
+            <span className="text-sm font-bold text-slate-800">{t.chatHistory.historico}</span>
           </div>
 
           <button
             type="button"
             onClick={onClose}
             className="rounded-lg p-1.5 transition hover:bg-gray-100"
-            title="Fechar"
+            title={t.chatHistory.fechar}
           >
             <X className="h-4 w-4 text-gray-500" />
           </button>
@@ -159,7 +164,7 @@ export function ChatHistoryPanel({
             className="flex w-full items-center gap-2 rounded-xl border border-dashed border-gray-300 px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-gray-400 hover:bg-gray-50"
           >
             <Plus className="h-4 w-4" style={{ color: SERRANO_BLUE }} />
-            Novo chat
+            {t.chatHistory.novoChat}
           </button>
         </div>
 
@@ -168,16 +173,16 @@ export function ChatHistoryPanel({
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-gray-500">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Carregando…
+              {t.chatHistory.carregando}
             </div>
           ) : conversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
               <MessageSquare className="h-8 w-8 text-gray-300" />
               <p className="text-sm font-semibold text-slate-700">
-                Sem conversas ainda
+                {t.chatHistory.semConversas}
               </p>
               <p className="text-xs text-gray-500">
-                Inicie uma conversa para ela aparecer aqui.
+                {t.chatHistory.semConversasDesc}
               </p>
             </div>
           ) : (
@@ -231,7 +236,7 @@ export function ChatHistoryPanel({
                           setConversationToDelete(conv);
                         }}
                         className="p-1.5 rounded-md text-white transition bg-red-500 hover:bg-red-600 shrink-0"
-                        title="Deletar conversa"
+                        title={t.chatHistory.deletarConversa}
                         disabled={isDeleting}
                       >
                         {isDeleting ? (
@@ -258,15 +263,15 @@ export function ChatHistoryPanel({
         {/* Footer */}
         <div className="border-t border-gray-100 px-4 py-2.5">
           <p className="text-center text-[11px] text-gray-400">
-            Últimas 50 conversas
+            {t.chatHistory.ultimas50}
           </p>
         </div>
       </div>
 
       <ConfirmDeleteDialog
         open={!!conversationToDelete}
-        title="Confirmar deleção da conversa"
-        description="Essa ação remove a conversa e o histórico vinculado a ela. Não poderá ser desfeita."
+        title={t.chatHistory.confirmarDelecao}
+        description={t.chatHistory.confirmarDelecaoDesc}
         itemName={conversationToDelete?.title}
         expectedPhrase={
           conversationToDelete

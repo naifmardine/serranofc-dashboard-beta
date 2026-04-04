@@ -145,7 +145,7 @@ export function makeRangeLabel(
 /**
  * Sanitiza strings (para labels de gráfico) sem quebrar UI.
  */
-export function safeLabel(input: unknown, fallback = "Não informado") {
+export function safeLabel(input: unknown, fallback = "—") {
   if (typeof input !== "string") return fallback;
   const t = input.trim();
   return t.length ? t : fallback;

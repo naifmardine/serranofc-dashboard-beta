@@ -6,6 +6,7 @@ import { KeyRound, LogOut, Save } from "lucide-react";
 
 import PageTitle from "@/components/Atoms/PageTitle";
 import { useAuth } from "../auth/AuthContext";
+import { useI18n } from "@/contexts/I18nContext";
 
 function initials(nome: string) {
   const p = nome.trim().split(/\s+/);
@@ -14,6 +15,7 @@ function initials(nome: string) {
 
 export default function ProfilePage() {
   const { user, loading, logout, refreshMe } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
 
   // Perfil
@@ -71,14 +73,14 @@ export default function ProfilePage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Falha ao atualizar perfil");
+        throw new Error(data.error || t.profile.falhaAtualizar);
       }
 
-      setSuccess("Perfil atualizado com sucesso!");
+      setSuccess(t.profile.perfilAtualizado);
       await refreshMe?.();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      setError(err.message || "Erro ao atualizar perfil");
+      setError(err.message || t.profile.falhaAtualizar);
     } finally {
       setIsSubmitting(false);
     }
@@ -89,11 +91,11 @@ export default function ProfilePage() {
     setPwError("");
     setPwSuccess("");
 
-    if (!currentPassword) return setPwError("Digite sua senha atual.");
+    if (!currentPassword) return setPwError(t.profile.digiteAtual);
     if (newPassword.length < 10)
-      return setPwError("A nova senha deve ter pelo menos 10 caracteres.");
+      return setPwError(t.profile.senhaMinima);
     if (newPassword !== confirmNewPassword)
-      return setPwError("A confirmação não confere.");
+      return setPwError(t.profile.confirmaNaoConfere);
 
     setPwSubmitting(true);
 
@@ -117,10 +119,10 @@ export default function ProfilePage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Falha ao alterar senha");
+        throw new Error(data.error || t.profile.falhaSenha);
       }
 
-      setPwSuccess("Senha alterada com sucesso!");
+      setPwSuccess(t.profile.senhaAlterada);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
@@ -128,7 +130,7 @@ export default function ProfilePage() {
 
       await refreshMe?.();
     } catch (err: any) {
-      setPwError(err.message || "Erro ao alterar senha");
+      setPwError(err.message || t.profile.falhaSenha);
     } finally {
       setPwSubmitting(false);
     }
@@ -141,15 +143,15 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-gray-500">Carregando...</div>
+        <div className="text-gray-500">{t.common.carregando}</div>
       </div>
     );
   }
 
   if (!user) return null;
 
-  const displayName = user.name || user.email || "Usuário";
-  const roleLabel = user.role === "ADMIN" ? "Administrador" : "Cliente";
+  const displayName = user.name || user.email || t.profile.usuario;
+  const roleLabel = user.role === "ADMIN" ? t.profile.administrador : t.profile.cliente;
 
   const headerActions = (
     <div className="flex items-center gap-2">
@@ -164,10 +166,10 @@ export default function ProfilePage() {
           focus-visible:outline focus-visible:outline-[#F2CD00] focus-visible:-outline-offset-2
           cursor-pointer
         "
-        title="Sair"
+        title={t.profile.sair}
       >
         <LogOut className="h-4 w-4" />
-        Sair
+        {t.profile.sair}
       </button>
 
       <button
@@ -183,10 +185,10 @@ export default function ProfilePage() {
           focus-visible:outline focus-visible:outline-[#F2CD00] focus-visible:-outline-offset-2
           cursor-pointer
         "
-        title="Salvar alterações"
+        title={t.profile.salvar}
       >
         <Save className="h-4 w-4" />
-        {isSubmitting ? "Salvando..." : "Salvar"}
+        {isSubmitting ? t.profile.salvando : t.profile.salvar}
       </button>
     </div>
   );
@@ -194,9 +196,9 @@ export default function ProfilePage() {
   return (
     <section className="mx-auto max-w-6xl p-6">
       <PageTitle
-        base="Principal"
-        title="Perfil"
-        subtitle="Gerencie suas informações e segurança da conta."
+        base={t.common.principal}
+        title={t.profile.title}
+        subtitle={t.profile.subtitle}
         actions={headerActions}
         className="mb-6"
       />
@@ -259,13 +261,13 @@ export default function ProfilePage() {
           <form id="profile-form" onSubmit={handleSubmitProfile} className="space-y-4 p-5">
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-900">
-                Nome
+                {t.profile.nome}
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Seu nome completo"
+                placeholder={t.profile.nomeCompletoPlaceholder}
                 className="
                   w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5
                   text-slate-900
@@ -275,13 +277,13 @@ export default function ProfilePage() {
                 "
               />
               <p className="mt-1 text-xs text-gray-500">
-                Esse nome aparece no topo e na sidebar.
+                {t.profile.nomeHint}
               </p>
             </div>
 
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-900">
-                Email
+                {t.profile.email}
               </label>
               <input
                 type="email"
@@ -292,7 +294,7 @@ export default function ProfilePage() {
                   text-gray-500 cursor-not-allowed
                 "
               />
-              <p className="mt-1 text-xs text-gray-500">Email não pode ser alterado.</p>
+              <p className="mt-1 text-xs text-gray-500">{t.profile.emailHint}</p>
             </div>
           </form>
         </div>
@@ -304,9 +306,9 @@ export default function ProfilePage() {
                 <KeyRound className="h-4 w-4 text-[#003399]" />
               </span>
               <div>
-                <div className="font-bold text-slate-900">Segurança</div>
+                <div className="font-bold text-slate-900">{t.profile.seguranca}</div>
                 <div className="text-xs text-gray-500">
-                  Troque sua senha (mínimo 10 caracteres).
+                  {t.profile.segurancaDesc}
                 </div>
               </div>
             </div>
@@ -315,7 +317,7 @@ export default function ProfilePage() {
           <form onSubmit={handleChangePassword} className="space-y-4 p-5">
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-900">
-                Senha atual
+                {t.profile.senhaAtual}
               </label>
               <input
                 type="password"
@@ -334,7 +336,7 @@ export default function ProfilePage() {
 
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-900">
-                Nova senha
+                {t.profile.novaSenha}
               </label>
               <input
                 type="password"
@@ -353,7 +355,7 @@ export default function ProfilePage() {
 
             <div>
               <label className="mb-2 block text-sm font-semibold text-slate-900">
-                Confirmar nova senha
+                {t.profile.confirmarSenha}
               </label>
               <input
                 type="password"
@@ -397,11 +399,11 @@ export default function ProfilePage() {
                 cursor-pointer
               "
             >
-              {pwSubmitting ? "Alterando..." : "Alterar senha"}
+              {pwSubmitting ? t.profile.alterando : t.profile.alterarSenha}
             </button>
 
             <p className="text-xs text-gray-500">
-              Dica: use uma senha longa e única. Evite repetir a senha antiga.
+              {t.profile.dicaSenha}
             </p>
           </form>
         </div>

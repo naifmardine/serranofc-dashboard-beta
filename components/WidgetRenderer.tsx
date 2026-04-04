@@ -18,6 +18,7 @@ import {
 } from "recharts";
 
 import { useMemo, useState } from "react";
+import { useI18n } from "@/contexts/I18nContext";
 
 import { formatCurrency, formatMoneyAxis, formatNumber } from "@/lib/dashboard/format";
 import { usePlayersDrilldown } from "@/components/PlayersDrilldownProvider";
@@ -111,111 +112,131 @@ function titleCasePt(s: string) {
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
-function prettifyKey(raw: string) {
-  if (!raw) return "—";
-  const key = String(raw);
+function makePrettifyKey(t: any) {
+  return function prettifyKey(raw: string) {
+    if (!raw) return "—";
+    const key = String(raw);
+    const cl = t?.chartLabels;
 
-  const direct: Record<string, string> = {
-    // comuns
-    jogadores: "Jogadores",
-    jogador: "Jogador",
-    clube: "Clube",
-    agencia: "Agência",
-    pais: "País",
-    liga: "Liga",
-    uf: "UF",
-    estado: "Estado",
-    faixa: "Faixa",
-    bucket: "Faixa",
+    const direct: Record<string, string> = {
+      jogadores: cl?.jogadores ?? "Jogadores",
+      jogador: cl?.jogador ?? "Jogador",
+      clube: cl?.clube ?? "Clube",
+      agencia: cl?.agencia ?? "Agência",
+      pais: cl?.pais ?? "País",
+      liga: cl?.liga ?? "Liga",
+      uf: cl?.uf ?? "UF",
+      estado: cl?.estado ?? "Estado",
+      faixa: cl?.faixa ?? "Faixa",
+      bucket: cl?.faixa ?? "Faixa",
+      valor: cl?.valor ?? "Valor",
+      fee: cl?.valor ?? "Valor",
+      totalFee: cl?.volumeEur ?? "Volume (€)",
+      total_fee: cl?.volumeEur ?? "Volume (€)",
+      avgFee: cl?.valorMedio ?? "Valor médio",
+      avg_fee: cl?.valorMedio ?? "Valor médio",
+      revenue: cl?.receita ?? "Receita",
+      cost: cl?.custo ?? "Custo",
+      volume: cl?.volume ?? "Volume",
+      serranoPct: cl?.serranoPct ?? "Serrano (%)",
+      marketPct: cl?.mercadoPct ?? "Mercado (%)",
+      serranoAge: cl?.idadeMediaSerrano ?? "Idade média (Serrano)",
+      marketAge: cl?.idadeMediaMercado ?? "Idade média (Mercado)",
+      serrano: cl?.serrano ?? "Serrano",
+      market: cl?.mercado ?? "Mercado",
+      deals: cl?.transacoes ?? "Transações",
+      period: cl?.periodo ?? "Período",
+      compradores: cl?.compradores ?? "Compradores",
+      vendedores: cl?.vendedores ?? "Vendedores",
+      idade: cl?.idade ?? "Idade",
+      age: cl?.idade ?? "Idade",
+    };
 
-    // valores / dinheiro
-    valor: "Valor",
-    fee: "Valor",
-    totalFee: "Volume (€)",
-    total_fee: "Volume (€)",
-    avgFee: "Valor médio",
-    avg_fee: "Valor médio",
-    revenue: "Receita",
-    cost: "Custo",
-    volume: "Volume",
+    if (direct[key]) return direct[key];
 
-    // comparativos
-    serranoPct: "Serrano (%)",
-    marketPct: "Mercado (%)",
-    serranoAge: "Idade média (Serrano)",
-    marketAge: "Idade média (Mercado)",
-    serrano: "Serrano",
-    market: "Mercado",
-    deals: "Transações",
+    const spaced = key
+      .replace(/_/g, " ")
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .trim();
 
-    // tempo
-    period: "Período",
+    const tokens: Record<string, string> = {
+      avg: cl?.medio ?? "médio",
+      total: cl?.total ?? "total",
+      count: cl?.quantidade ?? "quantidade",
+      pct: "%",
+    };
+
+    const words = spaced.split(/\s+/).map((w) => {
+      const wl = w.toLowerCase();
+      if (tokens[wl]) return tokens[wl];
+      return w;
+    });
+
+    return titleCasePt(words.join(" "));
   };
-
-  if (direct[key]) return direct[key];
-
-  // snake_case / camelCase -> palavras
-  const spaced = key
-    .replace(/_/g, " ")
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .trim();
-
-  // traduzir alguns tokens que sempre aparecem feios
-  const tokens: Record<string, string> = {
-    avg: "médio",
-    total: "total",
-    count: "quantidade",
-    pct: "%",
-  };
-
-  const words = spaced.split(/\s+/).map((w) => {
-    const wl = w.toLowerCase();
-    if (tokens[wl]) return tokens[wl];
-    return w;
-  });
-
-  return titleCasePt(words.join(" "));
 }
 
-function prettifyPosicao(code: any) {
-  const c = String(code ?? "").trim().toUpperCase();
-  const map: Record<string, string> = {
-    GOL: "Goleiros",
-    ZAG: "Zagueiros",
-    LD: "Lateral direito",
-    LE: "Lateral esquerdo",
-    LAT: "Laterais",
-    VOL: "Volantes",
-    MC: "Meio-campistas",
-    MEI: "Meias",
-    PD: "Ponta direita",
-    PE: "Ponta esquerda",
-    PON: "Pontas",
-    ATA: "Atacantes",
+function makePrettifyPosicao(t: any) {
+  return function prettifyPosicao(code: any) {
+    const c = String(code ?? "").trim().toUpperCase();
+    const cp = t?.chartPositions;
+    const map: Record<string, string> = {
+      GOL: cp?.GOL ?? "Goleiros",
+      ZAG: cp?.ZAG ?? "Zagueiros",
+      LD: cp?.LD ?? "Lateral direito",
+      LE: cp?.LE ?? "Lateral esquerdo",
+      LAT: cp?.LAT ?? "Laterais",
+      VOL: cp?.VOL ?? "Volantes",
+      MC: cp?.MC ?? "Meio-campistas",
+      MEI: cp?.MEI ?? "Meias",
+      PD: cp?.PD ?? "Ponta direita",
+      PE: cp?.PE ?? "Ponta esquerda",
+      PON: cp?.PON ?? "Pontas",
+      ATA: cp?.ATA ?? "Atacantes",
+    };
+    return map[c] ?? (c || "—");
   };
-  return map[c] ?? (c || "—");
 }
 
-function prettifyXValue(labelKey: string, v: any) {
-  if (v == null) return "—";
+// Module-level defaults for non-component contexts
+const prettifyKey = makePrettifyKey(null);
+const prettifyPosicao = makePrettifyPosicao(null);
 
-  const lk = String(labelKey).toLowerCase();
+function makePrettifyXValue(t: any) {
+  const lPrettifyPosicao = makePrettifyPosicao(t);
+  const semAgencia = t?.chartLabels?.semAgencia ?? "Sem agência";
 
-  if (lk === "posicao") return prettifyPosicao(v);
+  return function prettifyXValue(labelKey: string, v: any) {
+    if (v == null) return "—";
 
-  // period "YYYY-MM" -> "YYYY"
-  if (lk === "period" && typeof v === "string" && /^\d{4}-\d{2}$/.test(v)) {
-    return v.slice(0, 4);
-  }
+    const lk = String(labelKey).toLowerCase();
 
-  // bucket/faixa/etc
-  return String(v);
+    if (lk === "posicao") return lPrettifyPosicao(v);
+
+    // period "YYYY-MM" -> "YYYY"
+    if (lk === "period" && typeof v === "string" && /^\d{4}-\d{2}$/.test(v)) {
+      return v.slice(0, 4);
+    }
+
+    const s = String(v);
+    if (s === "Sem agência") return semAgencia;
+    return s;
+  };
 }
 
-function buildTitleFromPoint(labelKey: string, point: any) {
-  const prettyKey = prettifyKey(labelKey);
-  const label = prettifyXValue(labelKey, point?.[labelKey]);
-  if (!label || label === "—") return "Jogadores";
+// Module-level fallback for non-component contexts
+const prettifyXValue = makePrettifyXValue(null);
+
+function buildTitleFromPoint(
+  labelKey: string,
+  point: any,
+  fallbackLabel: string,
+  customPrettifyKey?: (k: string) => string,
+  customPrettifyXValue?: (k: string, v: any) => string,
+) {
+  const prettyKey = (customPrettifyKey ?? prettifyKey)(labelKey);
+  const label = (customPrettifyXValue ?? prettifyXValue)(labelKey, point?.[labelKey]);
+  if (!label || label === "—") return fallbackLabel;
   return `${prettyKey}: ${label}`;
 }
 
@@ -373,6 +394,10 @@ function BarToggleWidget({
 ============================== */
 
 function BarWidget({ data, size }: { data: any[]; size: WidgetSize }) {
+  const { t } = useI18n();
+  const lPrettifyKey = useMemo(() => makePrettifyKey(t), [t]);
+  const lPrettifyPosicao = useMemo(() => makePrettifyPosicao(t), [t]);
+  const lPrettifyXValue = useMemo(() => makePrettifyXValue(t), [t]);
   const drill = usePlayersDrilldown();
   if (!data?.length) return null;
 
@@ -409,7 +434,7 @@ function BarWidget({ data, size }: { data: any[]; size: WidgetSize }) {
       const drillInfo = extractDrill(point);
       if (!drillInfo) return;
 
-      const title = buildTitleFromPoint(labelKey, point);
+      const title = buildTitleFromPoint(labelKey, point, t.chartLabels.jogadores, lPrettifyKey, lPrettifyXValue);
 
       if (drillInfo.kind === "ids") {
         void drill.openFromIds(title, drillInfo.ids);
@@ -427,17 +452,17 @@ function BarWidget({ data, size }: { data: any[]; size: WidgetSize }) {
       const rightKey = countKeys[0];
 
       return [
-        { label: prettifyKey(leftKey), color: getBarColorForKey(leftKey, 0) },
-        { label: prettifyKey(rightKey), color: getBarColorForKey(rightKey, 1) },
+        { label: lPrettifyKey(leftKey), color: getBarColorForKey(leftKey, 0) },
+        { label: lPrettifyKey(rightKey), color: getBarColorForKey(rightKey, 1) },
       ];
     }
 
     if (numericKeys.length <= 1) return [];
     return numericKeys.map((k, i) => ({
-      label: prettifyKey(k),
+      label: lPrettifyKey(k),
       color: getBarColorForKey(k, i),
     }));
-  }, [canDualAxis, moneyKeys, countKeys, numericKeys]);
+  }, [canDualAxis, moneyKeys, countKeys, numericKeys, lPrettifyKey]);
 
   void size;
 
@@ -461,7 +486,7 @@ function BarWidget({ data, size }: { data: any[]; size: WidgetSize }) {
               tick={{ fontSize: 12 }}
               interval={yearTicks ? "preserveStartEnd" : 0}
               ticks={yearTicks ?? undefined}
-              tickFormatter={(v) => prettifyXValue(labelKey, v)}
+              tickFormatter={(v) => lPrettifyXValue(labelKey, v)}
               {...(xTickProps ?? {})}
             />
 
@@ -489,11 +514,11 @@ function BarWidget({ data, size }: { data: any[]; size: WidgetSize }) {
             <Tooltip
               labelFormatter={(l: any) => {
                 const fakePoint = { [labelKey]: l };
-                return buildTitleFromPoint(labelKey, fakePoint);
+                return buildTitleFromPoint(labelKey, fakePoint, t.chartLabels.jogadores, lPrettifyKey, lPrettifyXValue);
               }}
               formatter={(v: any, name: any) => [
                 formatByKey(v, String(name)),
-                prettifyKey(String(name)),
+                lPrettifyKey(String(name)),
               ]}
             />
 
@@ -539,6 +564,9 @@ function BarWidget({ data, size }: { data: any[]; size: WidgetSize }) {
 ============================== */
 
 function LineWidget({ data, size }: { data: any[]; size: WidgetSize }) {
+  const { t } = useI18n();
+  const lPrettifyKey = useMemo(() => makePrettifyKey(t), [t]);
+  const lPrettifyXValue = useMemo(() => makePrettifyXValue(t), [t]);
   if (!data?.length) return null;
 
   const sample = data[0] ?? {};
@@ -554,7 +582,7 @@ function LineWidget({ data, size }: { data: any[]; size: WidgetSize }) {
   const legendItems = useMemo(() => {
     if (numericKeys.length <= 1) return [];
     return numericKeys.map((k, i) => ({
-      label: prettifyKey(k),
+      label: lPrettifyKey(k),
       color: getBarColorForKey(k, i),
     }));
   }, [numericKeys]);
@@ -573,7 +601,7 @@ function LineWidget({ data, size }: { data: any[]; size: WidgetSize }) {
               tick={{ fontSize: 12 }}
               ticks={yearTicks ?? undefined}
               interval={yearTicks ? "preserveStartEnd" : undefined}
-              tickFormatter={(v) => prettifyXValue(labelKey, v)}
+              tickFormatter={(v) => lPrettifyXValue(labelKey, v)}
             />
 
             <YAxis
@@ -586,11 +614,11 @@ function LineWidget({ data, size }: { data: any[]; size: WidgetSize }) {
             <Tooltip
               labelFormatter={(l: any) => {
                 const fakePoint = { [labelKey]: l };
-                return buildTitleFromPoint(labelKey, fakePoint);
+                return buildTitleFromPoint(labelKey, fakePoint, t.chartLabels.jogadores, lPrettifyKey, lPrettifyXValue);
               }}
               formatter={(v: any, name: any) => [
                 formatByKey(v, String(name)),
-                prettifyKey(String(name)),
+                lPrettifyKey(String(name)),
               ]}
             />
 
@@ -638,6 +666,8 @@ const buildIntegerTicks = (min: number, max: number, size: WidgetSize) => {
 };
 
 function ScatterWidget({ data, size }: { data: any[]; size: WidgetSize }) {
+  const { t } = useI18n();
+  const lPrettifyKey = useMemo(() => makePrettifyKey(t), [t]);
   const drill = usePlayersDrilldown();
   if (!data?.length) return null;
 
@@ -663,7 +693,7 @@ function ScatterWidget({ data, size }: { data: any[]; size: WidgetSize }) {
       if (!drillInfo) return;
 
       const nome = point?.nome ?? point?.jogador ?? point?.label;
-      const title = nome ? `Jogador: ${String(nome)}` : "Jogador";
+      const title = nome ? `${t.chartLabels.jogador}: ${String(nome)}` : t.chartLabels.jogador;
 
       if (drillInfo.kind === "ids") {
         void drill.openFromIds(title, drillInfo.ids);
@@ -683,7 +713,7 @@ function ScatterWidget({ data, size }: { data: any[]; size: WidgetSize }) {
           <XAxis
             type="number"
             dataKey="idade"
-            name="Idade"
+            name={t.chartLabels.idade}
             tick={{ fontSize: 12 }}
             allowDecimals={false}
             ticks={idadeTicks}
@@ -693,7 +723,7 @@ function ScatterWidget({ data, size }: { data: any[]; size: WidgetSize }) {
           <YAxis
             type="number"
             dataKey="valor"
-            name="Valor"
+            name={t.chartLabels.valor}
             width={120}
             tick={{ fontSize: 12 }}
             tickMargin={6}
@@ -705,7 +735,7 @@ function ScatterWidget({ data, size }: { data: any[]; size: WidgetSize }) {
             labelFormatter={() => ""}
             formatter={(v: any, name: any, p: any) => {
               const series = String(name);
-              const pretty = series === "valor" ? "Valor" : prettifyKey(series);
+              const pretty = series === "valor" ? lPrettifyKey("valor") : lPrettifyKey(series);
               const formatted =
                 series === "valor" ? formatCurrency(v, "EUR") : formatNumber(v);
 

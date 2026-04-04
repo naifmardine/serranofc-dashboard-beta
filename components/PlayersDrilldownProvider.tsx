@@ -42,6 +42,8 @@ function normalizeJogadorAny(p: any): Jogador {
     imagemUrl: p?.imagemUrl ?? null,
     altura: p?.altura ?? null,
     situacao: p?.situacao ?? null,
+    contratoInicio: p?.contratoInicio ?? null,
+    contratoFim: p?.contratoFim ?? null,
     possePct: p?.possePct ?? null,
     clubeNome: clubeNome ?? "—",
     clube: clubeNome ?? "—",

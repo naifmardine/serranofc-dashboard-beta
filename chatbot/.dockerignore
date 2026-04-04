@@ -1,0 +1,8 @@
+__pycache__
+*.pyc
+.env*
+tests/
+BUG_FIX_REPORT.md
+.git
+.venv
+.pytest_cache

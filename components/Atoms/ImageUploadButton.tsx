@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { uploadImage } from "@/lib/cloudinaryUpload";
+import { useI18n } from "@/contexts/I18nContext";
 
 type UploadResult = {
   secureUrl: string;
@@ -37,8 +38,8 @@ function isAllowedType(t: string) {
 }
 
 export default function ImageUploadButton({
-  label = "Foto do jogador",
-  helperText = "Selecione PNG/JPG. Vamos subir no Cloudinary e salvar a URL no jogador.",
+  label,
+  helperText,
   valueUrl,
   disabled,
   maxSizeMB = 5,
@@ -47,6 +48,7 @@ export default function ImageUploadButton({
   onClear,
   className,
 }: Props) {
+  const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [localFile, setLocalFile] = useState<File | null>(null);
@@ -76,11 +78,11 @@ export default function ImageUploadButton({
     setError(null);
 
     if (!isAllowedType(file.type)) {
-      setError("Formato inválido. Use PNG ou JPG.");
+      setError(t.imageUpload.formatoInvalido);
       return;
     }
     if (file.size > maxBytes) {
-      setError(`Arquivo muito grande. Máx: ${maxSizeMB} MB. (o seu: ${formatMB(file.size)})`);
+      setError(`${t.imageUpload.arquivoGrande} Max: ${maxSizeMB} MB.`);
       return;
     }
 
@@ -91,7 +93,7 @@ export default function ImageUploadButton({
       const up = await uploadImage(file); // <- sua função
       onUploaded({ secureUrl: up.secureUrl, publicId: up.publicId });
     } catch (e: any) {
-      setError(e?.message || "Falha no upload.");
+      setError(e?.message || t.imageUpload.falhaUpload);
     } finally {
       setUploading(false);
     }
@@ -118,8 +120,8 @@ export default function ImageUploadButton({
     <div className={className}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-sm font-semibold text-gray-900">{label}</div>
-          <div className="text-xs text-gray-500">{helperText}</div>
+          <div className="text-sm font-semibold text-gray-900">{label || t.imageUpload.fotoJogador}</div>
+          <div className="text-xs text-gray-500">{helperText || t.imageUpload.helperText}</div>
         </div>
 
         <div className="flex items-center gap-2 flex-none">
@@ -129,7 +131,7 @@ export default function ImageUploadButton({
             disabled={disabled || uploading}
             className="rounded-lg bg-[#f2d249] px-3 py-2 text-sm font-semibold text-black shadow-sm hover:bg-[#e2c23f] disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {uploading ? "Enviando..." : "Importar imagem"}
+            {uploading ? t.imageUpload.enviando : t.imageUpload.importarImagem}
           </button>
 
           <button
@@ -138,7 +140,7 @@ export default function ImageUploadButton({
             disabled={disabled || uploading || (!valueUrl && !localFile)}
             className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Limpar
+            {t.imageUpload.limpar}
           </button>
         </div>
       </div>
@@ -167,7 +169,7 @@ export default function ImageUploadButton({
         <div className="min-w-0">
           {localFile ? (
             <>
-              <div className="text-xs text-gray-500">Arquivo selecionado</div>
+              <div className="text-xs text-gray-500">{t.imageUpload.arquivoSelecionado}</div>
               <div className="text-sm text-gray-900 font-semibold truncate">{localFile.name}</div>
               <div className="text-xs text-gray-500">
                 {localFile.type} • {formatMB(localFile.size)}
@@ -175,11 +177,11 @@ export default function ImageUploadButton({
             </>
           ) : valueUrl ? (
             <>
-              <div className="text-xs text-gray-500">Imagem atual</div>
+              <div className="text-xs text-gray-500">{t.imageUpload.imagemAtual}</div>
               <div className="text-sm text-gray-900 truncate">{valueUrl}</div>
             </>
           ) : (
-            <div className="text-sm text-gray-500">Nenhuma imagem selecionada.</div>
+            <div className="text-sm text-gray-500">{t.imageUpload.nenhumaImagem}</div>
           )}
 
           {error && (

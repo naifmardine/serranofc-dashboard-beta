@@ -17,6 +17,7 @@ import AdminRow from "@/components/AdminRow";
 import AdminButton from "@/components/Atoms/AdminButton";
 import ConfirmDeleteDialog from "@/components/Atoms/ConfirmDeleteDialog";
 import CopySecretDialog from "@/components/Atoms/CopySecretDialog";
+import { useI18n } from "@/contexts/I18nContext";
 
 /**
  * NÃO importamos enums do Prisma no client.
@@ -44,10 +45,6 @@ function formatCreatedAt(input: unknown) {
   const d = new Date(input as any);
   if (Number.isNaN(d.getTime())) return "--/--/----";
   return d.toLocaleDateString("pt-BR");
-}
-
-function roleLabel(role: Role) {
-  return role === "ADMIN" ? "Admin" : "Cliente";
 }
 
 // senha forte usando Web Crypto (sem libs)
@@ -83,8 +80,12 @@ function generateStrongPassword(length = 20) {
 }
 
 export default function AdminUsersPage() {
+  const { t } = useI18n();
   const { user, loading } = useAuth();
   const router = useRouter();
+
+  const roleLabel = (role: Role) =>
+    role === "ADMIN" ? t.adminUsuarios.administrador : t.adminUsuarios.cliente;
 
   const [users, setUsers] = useState<User[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
@@ -149,13 +150,13 @@ export default function AdminUsersPage() {
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(text || "Falha ao carregar usuários");
+        throw new Error(text || t.adminUsuarios.falhaCarregar);
       }
 
       const data = (await res.json()) as User[];
       setUsers(data);
     } catch (err: any) {
-      setError(err?.message || "Erro ao carregar usuários");
+      setError(err?.message || t.adminUsuarios.erroCarregar);
     } finally {
       setIsLoadingUsers(false);
     }
@@ -168,7 +169,7 @@ export default function AdminUsersPage() {
 
     try {
       if (!tempPassword || tempPassword.length < 10) {
-        throw new Error("Senha temporária inválida. Gere novamente.");
+        throw new Error(t.adminUsuarios.senhaInvalida);
       }
 
       const payload = {
@@ -187,7 +188,7 @@ export default function AdminUsersPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Falha ao criar usuário");
+        throw new Error(data.error || t.adminUsuarios.falhaCriar);
       }
 
       const created = (await res.json()) as User;
@@ -195,10 +196,10 @@ export default function AdminUsersPage() {
 
       // prepara popup de copiar
       const cred = [
-        `Email: ${payload.email.trim()}`,
-        `Senha temporária: ${tempPassword}`,
-        `Acesso: ${payload.role === "ADMIN" ? "Admin" : "Cliente"}`,
-        `Obs: no primeiro login, será obrigatório trocar a senha.`,
+        `${t.adminUsuarios.email}: ${payload.email.trim()}`,
+        `${t.adminUsuarios.senhaTemporaria}: ${tempPassword}`,
+        `${t.adminUsuarios.acesso}: ${payload.role === "ADMIN" ? t.adminUsuarios.administrador : t.adminUsuarios.cliente}`,
+        t.adminUsuarios.senhaObs,
       ].join("\n");
 
       setCopyPayload(cred);
@@ -209,10 +210,10 @@ export default function AdminUsersPage() {
       setTempPassword("");
       setShowCreateModal(false);
 
-      setSuccess("Usuário criado com sucesso!");
+      setSuccess(t.adminUsuarios.usuarioCriado);
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      setError(err?.message || "Erro ao criar usuário");
+      setError(err?.message || t.adminUsuarios.erroCriar);
     } finally {
       setIsSubmitting(false);
     }
@@ -240,7 +241,7 @@ export default function AdminUsersPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Falha ao atualizar usuário");
+        throw new Error(data.error || t.adminUsuarios.falhaAtualizar);
       }
 
       const updated = (await res.json()) as User;
@@ -249,10 +250,10 @@ export default function AdminUsersPage() {
       setShowEditModal(false);
       setEditUser(null);
 
-      setSuccess("Usuário atualizado com sucesso!");
+      setSuccess(t.adminUsuarios.usuarioAtualizado);
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
-      setError(err?.message || "Erro ao atualizar usuário");
+      setError(err?.message || t.adminUsuarios.erroAtualizar);
     } finally {
       setIsSubmitting(false);
     }
@@ -288,21 +289,21 @@ export default function AdminUsersPage() {
     setDelOpen(false);
     setDelTarget(null);
 
-    setSuccess("Usuário deletado com sucesso!");
+    setSuccess(t.adminUsuarios.usuarioDeletado);
     setTimeout(() => setSuccess(""), 3000);
   }
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-gray-500">Carregando...</div>
+        <div className="text-gray-500">{t.common.carregando}</div>
       </div>
     );
   }
 
   const headerActions = (
     <AdminButton
-      label="Novo Usuário"
+      label={t.adminUsuarios.novoUsuario}
       icon={PlusCircle}
       onClick={() => setShowCreateModal(true)}
     />
@@ -313,9 +314,9 @@ export default function AdminUsersPage() {
       {/* popup copiar senha */}
       <CopySecretDialog
         open={copyOpen}
-        title="Credenciais do usuário"
-        description="Copie e envie para o usuário. Ele será obrigado a trocar a senha no primeiro login."
-        payloadTitle="Copiar credenciais"
+        title={t.adminUsuarios.credenciaisTitulo}
+        description={t.adminUsuarios.credenciaisDesc}
+        payloadTitle={t.adminUsuarios.copiarCredenciais}
         payload={copyPayload}
         onClose={() => {
           setCopyOpen(false);
@@ -325,8 +326,8 @@ export default function AdminUsersPage() {
 
       <ConfirmDeleteDialog
         open={delOpen}
-        title="Deletar usuário"
-        description="Isso é irreversível. O usuário será removido do sistema."
+        title={t.adminUsuarios.deletarTitle}
+        description={t.adminUsuarios.deletarDesc}
         itemName={delTarget?.email ?? ""}
         expectedPhrase={expectedPhrase}
         onCancel={() => {
@@ -338,11 +339,11 @@ export default function AdminUsersPage() {
 
       <PageTitle
         base="Admin"
-        title="Usuários"
-        subtitle="Gerencie acessos (criar, editar nome e remover usuários)."
+        title={t.adminUsuarios.title}
+        subtitle={t.adminUsuarios.subtitle}
         actions={headerActions}
         className="mb-6"
-        crumbLabel="Usuários"
+        crumbLabel={t.adminUsuarios.title}
       />
 
       {(error || success) && (
@@ -363,16 +364,16 @@ export default function AdminUsersPage() {
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
         <div className="grid grid-cols-[0.4fr_1.6fr_1fr_1fr_0.7fr] border-b border-gray-200 bg-gray-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-700">
           <span />
-          <span>Usuário</span>
-          <span>Criado em</span>
+          <span>{t.adminUsuarios.usuario}</span>
+          <span>{t.adminUsuarios.criadoEm}</span>
           <span />
-          <span className="pr-1 text-right">Ações</span>
+          <span className="pr-1 text-right">{t.adminUsuarios.acoes}</span>
         </div>
 
         {isLoadingUsers ? (
-          <div className="py-10 text-center text-gray-500">Carregando usuários...</div>
+          <div className="py-10 text-center text-gray-500">{t.adminUsuarios.carregando}</div>
         ) : users.length === 0 ? (
-          <div className="py-10 text-center text-gray-500">Nenhum usuário encontrado</div>
+          <div className="py-10 text-center text-gray-500">{t.adminUsuarios.nenhumUsuario}</div>
         ) : (
           <div className="divide-y divide-gray-100">
             {users.map((u) => (
@@ -410,9 +411,9 @@ export default function AdminUsersPage() {
             <div className="w-full max-w-[520px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
               <div className="flex items-center justify-between border-b border-gray-200 p-4">
                 <div>
-                  <div className="text-sm font-extrabold text-slate-900">Criar usuário</div>
+                  <div className="text-sm font-extrabold text-slate-900">{t.adminUsuarios.criarUsuario}</div>
                   <div className="mt-1 text-xs text-gray-600">
-                    A senha é gerada automaticamente e será trocada no primeiro login.
+                    {t.adminUsuarios.criarDesc}
                   </div>
                 </div>
 
@@ -421,13 +422,13 @@ export default function AdminUsersPage() {
                   disabled={isSubmitting}
                   className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-800 hover:bg-gray-100 disabled:opacity-60"
                 >
-                  Fechar
+                  {t.adminUsuarios.fechar}
                 </button>
               </div>
 
               <form onSubmit={handleCreateUser} className="space-y-4 p-4">
                 <div>
-                  <label className="mb-1 block text-sm font-semibold">Nome</label>
+                  <label className="mb-1 block text-sm font-semibold">{t.adminUsuarios.nome}</label>
                   <div className="relative">
                     <UserIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
@@ -437,13 +438,13 @@ export default function AdminUsersPage() {
                       required
                       disabled={isSubmitting}
                       className="w-full rounded-[10px] border border-gray-300 py-2 pl-9 pr-3 text-sm text-gray-900 shadow-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
-                      placeholder="Nome completo"
+                      placeholder={t.adminUsuarios.nomeCompleto}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-semibold">Email</label>
+                  <label className="mb-1 block text-sm font-semibold">{t.adminUsuarios.email}</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <input
@@ -459,7 +460,7 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-semibold">Tipo de acesso</label>
+                  <label className="mb-1 block text-sm font-semibold">{t.adminUsuarios.tipoAcesso}</label>
                   <select
                     value={newUser.role}
                     onChange={(e) =>
@@ -468,14 +469,14 @@ export default function AdminUsersPage() {
                     disabled={isSubmitting}
                     className="w-full rounded-[10px] border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10"
                   >
-                    <option value="CLIENT">Cliente</option>
-                    <option value="ADMIN">Administrador</option>
+                    <option value="CLIENT">{t.adminUsuarios.cliente}</option>
+                    <option value="ADMIN">{t.adminUsuarios.administrador}</option>
                   </select>
                 </div>
 
                 {/* senha gerada */}
                 <div>
-                  <label className="mb-1 block text-sm font-semibold">Senha temporária</label>
+                  <label className="mb-1 block text-sm font-semibold">{t.adminUsuarios.senhaTemporaria}</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -488,15 +489,15 @@ export default function AdminUsersPage() {
                       onClick={() => setTempPassword(generateStrongPassword(22))}
                       disabled={isSubmitting}
                       className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 disabled:opacity-60"
-                      title="Gerar outra"
+                      title={t.adminUsuarios.gerarOutra}
                     >
                       <RefreshCcw className="h-4 w-4" />
-                      Gerar
+                      {t.adminUsuarios.gerar}
                     </button>
                   </div>
 
                   <p className="mt-1 text-xs text-gray-500">
-                    O usuário será obrigado a trocar a senha no primeiro login.
+                    {t.adminUsuarios.senhaDesc}
                   </p>
                 </div>
 
@@ -507,7 +508,7 @@ export default function AdminUsersPage() {
                     disabled={isSubmitting}
                     className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 disabled:opacity-60"
                   >
-                    Cancelar
+                    {t.adminUsuarios.cancelar}
                   </button>
 
                   <button
@@ -515,7 +516,7 @@ export default function AdminUsersPage() {
                     disabled={isSubmitting}
                     className="rounded-lg bg-[#f2d249] px-4 py-2 text-sm font-semibold text-black shadow-sm hover:bg-[#e2c23f] disabled:opacity-60"
                   >
-                    {isSubmitting ? "Criando..." : "Criar"}
+                    {isSubmitting ? t.adminUsuarios.criando : t.adminUsuarios.criar}
                   </button>
                 </div>
               </form>
@@ -535,9 +536,9 @@ export default function AdminUsersPage() {
             <div className="w-full max-w-[520px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
               <div className="flex items-center justify-between border-b border-gray-200 p-4">
                 <div>
-                  <div className="text-sm font-extrabold text-slate-900">Editar usuário</div>
+                  <div className="text-sm font-extrabold text-slate-900">{t.adminUsuarios.editarUsuario}</div>
                   <div className="mt-1 text-xs text-gray-600">
-                    Ajuste apenas o nome (como antes).
+                    {t.adminUsuarios.editarDesc}
                   </div>
                 </div>
 
@@ -546,7 +547,7 @@ export default function AdminUsersPage() {
                   disabled={isSubmitting}
                   className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-800 hover:bg-gray-100 disabled:opacity-60"
                 >
-                  Fechar
+                  {t.adminUsuarios.fechar}
                 </button>
               </div>
 
@@ -558,7 +559,7 @@ export default function AdminUsersPage() {
                 className="space-y-4 p-4"
               >
                 <div>
-                  <label className="mb-1 block text-sm font-semibold">Nome</label>
+                  <label className="mb-1 block text-sm font-semibold">{t.adminUsuarios.nome}</label>
                   <input
                     type="text"
                     value={editName}
@@ -571,13 +572,13 @@ export default function AdminUsersPage() {
 
                 <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
                   <div className="text-[11px] uppercase tracking-wider text-gray-500">
-                    Dados do usuário
+                    {t.adminUsuarios.dadosUsuario}
                   </div>
                   <div className="mt-1 text-sm font-semibold text-slate-900">
                     {editUser.email}
                   </div>
                   <div className="mt-1 text-xs text-gray-600">
-                    Tipo:{" "}
+                    {t.adminUsuarios.tipo}:{" "}
                     <span className="font-semibold">{roleLabel(editUser.role)}</span>
                   </div>
                 </div>
@@ -589,7 +590,7 @@ export default function AdminUsersPage() {
                     disabled={isSubmitting}
                     className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 disabled:opacity-60"
                   >
-                    Cancelar
+                    {t.adminUsuarios.cancelar}
                   </button>
 
                   <button
@@ -597,7 +598,7 @@ export default function AdminUsersPage() {
                     disabled={isSubmitting}
                     className="rounded-lg bg-[#f2d249] px-4 py-2 text-sm font-semibold text-black shadow-sm hover:bg-[#e2c23f] disabled:opacity-60"
                   >
-                    {isSubmitting ? "Salvando..." : "Salvar"}
+                    {isSubmitting ? t.adminUsuarios.salvando : t.adminUsuarios.salvar}
                   </button>
                 </div>
               </form>

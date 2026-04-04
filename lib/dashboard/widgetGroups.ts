@@ -14,6 +14,7 @@ export const WIDGET_GROUPS: WidgetGroup[] = [
   "compare",
 ];
 
+/** @deprecated Use t.widgetGroupLabels instead */
 export const WIDGET_GROUP_LABEL: Record<WidgetGroup, string> = {
   overview: "Visão geral",
   serrano: "Serrano",

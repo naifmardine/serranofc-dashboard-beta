@@ -108,6 +108,8 @@ export async function POST(req: Request) {
       possePct: body?.possePct ?? null,
       representacao: body?.representacao ?? null,
       situacao: body?.situacao ?? null,
+      contratoInicio: body?.contratoInicio ? new Date(body.contratoInicio) : null,
+      contratoFim: body?.contratoFim ? new Date(body.contratoFim) : null,
       numeroCamisa: body?.numeroCamisa ?? null,
       altura: body?.altura ?? null,
       imagemUrl: body?.imagemUrl ?? null,

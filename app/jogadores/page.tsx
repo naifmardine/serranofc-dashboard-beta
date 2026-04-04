@@ -12,10 +12,25 @@ import { LayoutGrid, List, SlidersHorizontal } from "lucide-react";
 
 import ExportPrintButton from "@/components/ExportPrintButton";
 import { useDashboardPdfExport } from "@/hooks/useDashboardPdfExport";
+import { useI18n } from "@/contexts/I18nContext";
 
 /* =========================
    Error boundary
 ========================= */
+function ErrorFallback({ err }: { err?: any }) {
+  const { t } = useI18n();
+  return (
+    <section className="w-full bg-gray-50 p-6">
+      <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <h3 className="mb-2 font-bold">{t.jogadores.erroCarregar}</h3>
+        <pre className="whitespace-pre-wrap wrap-break-word text-xs text-red-800">
+          {String(err?.message ?? err ?? t.jogadores.erroDesconhecido)}
+        </pre>
+      </div>
+    </section>
+  );
+}
+
 class PageErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean; err?: any }
@@ -31,16 +46,7 @@ class PageErrorBoundary extends React.Component<
 
   render() {
     if (this.state.hasError) {
-      return (
-        <section className="w-full bg-gray-50 p-6">
-          <div className="rounded-xl border border-gray-200 bg-white p-4">
-            <h3 className="mb-2 font-bold">Erro ao carregar “Jogadores”.</h3>
-            <pre className="whitespace-pre-wrap wrap-break-word text-xs text-red-800">
-              {String(this.state.err?.message ?? this.state.err ?? "Erro desconhecido")}
-            </pre>
-          </div>
-        </section>
-      );
+      return <ErrorFallback err={this.state.err} />;
     }
     return this.props.children;
   }
@@ -242,6 +248,7 @@ const EMPTY_FILTERS: JogadoresFilters = {
 };
 
 export default function JogadoresPage() {
+  const { t } = useI18n();
   const [view, setView] = useState<View>("grid");
   const [data, setData] = useState<Jogador[]>([]);
   const [loading, setLoading] = useState(true);
@@ -299,12 +306,14 @@ export default function JogadoresPage() {
       scale: 2,
       blockSelector: `[data-pdf-block="true"]`,
       header: {
-        title: "Jogadores",
-        subtitle: `Modo: ${view} • Filtros: ${activeFiltersCount} • Mostrando: ${filtered.length}`,
+        title: t.jogadores.title,
+        subtitle: `${t.jogadores.modo}: ${view} • ${t.jogadores.filtrosLabel}: ${activeFiltersCount} • ${t.jogadores.mostrando}: ${filtered.length}`,
         rightText: new Date().toISOString().slice(0, 10),
       },
       footer: {
-        leftText: "Serrano FC",
+        leftText: t.sidebar.serranFC,
+        pageLabel: t.pdfExport.pagina,
+        ofLabel: t.pdfExport.de,
       },
     });
   }, [exportPdf, view, activeFiltersCount, filtered.length]);
@@ -363,7 +372,7 @@ export default function JogadoresPage() {
         if (active) setData(normalizado);
       } catch (err: any) {
         console.error(err);
-        if (active) setError(err?.message ?? "Erro ao buscar jogadores");
+        if (active) setError(err?.message ?? t.jogadores.erroCarregar);
       } finally {
         if (active) setLoading(false);
       }
@@ -391,7 +400,7 @@ export default function JogadoresPage() {
         className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-gray-50"
       >
         <SlidersHorizontal size={16} />
-        Filtros
+        {t.jogadores.filtros}
         {activeFiltersCount > 0 && (
           <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#f2cd00] px-1.5 text-xs font-bold text-black">
             {activeFiltersCount}
@@ -400,13 +409,13 @@ export default function JogadoresPage() {
       </button>
 
       <div className="hidden text-sm text-gray-500 sm:block" data-no-export="true">
-        {loading ? "Carregando..." : `${filtered.length} / ${jogadores.length}`}
+        {loading ? t.common.carregando : `${filtered.length} / ${jogadores.length}`}
       </div>
 
       <div
         className="inline-flex overflow-hidden rounded-lg border border-gray-200 bg-white"
         role="group"
-        aria-label="Alternar visualização"
+        aria-label={t.jogadores.alternarVisualizacao}
         data-no-export="true"
       >
         <button
@@ -417,10 +426,10 @@ export default function JogadoresPage() {
           ].join(" ")}
           onClick={() => setView("grid")}
           aria-pressed={view === "grid"}
-          title="Exibir em cards"
+          title={t.jogadores.exibirCards}
         >
           <LayoutGrid size={16} />
-          Cards
+          {t.jogadores.cards}
         </button>
 
         <button
@@ -431,15 +440,15 @@ export default function JogadoresPage() {
           ].join(" ")}
           onClick={() => setView("list")}
           aria-pressed={view === "list"}
-          title="Exibir em lista"
+          title={t.jogadores.exibirLista}
         >
           <List size={16} />
-          Lista
+          {t.jogadores.lista}
         </button>
       </div>
 
       <div className="text-sm text-gray-500 sm:hidden" data-no-export="true">
-        {loading ? "Carregando..." : `${filtered.length} / ${jogadores.length}`}
+        {loading ? t.common.carregando : `${filtered.length} / ${jogadores.length}`}
       </div>
     </div>
   );
@@ -448,26 +457,26 @@ export default function JogadoresPage() {
     <PageErrorBoundary>
       <section className="w-full bg-gray-50 p-6">
         <PageTitle
-          base="Principal"
-          title="Jogadores"
-          subtitle="Explore o elenco e filtre por clube, posição, agência e métricas."
+          base={t.common.principal}
+          title={t.jogadores.title}
+          subtitle={t.jogadores.subtitle}
           actions={headerActions}
         />
 
         {exportError ? (
           <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
-            Falha ao exportar: {exportError}
+            {t.jogadores.falhaExportar}: {exportError}
           </div>
         ) : null}
 
-        {loading && <div className="mt-4 text-sm text-gray-600">Carregando jogadores...</div>}
+        {loading && <div className="mt-4 text-sm text-gray-600">{t.jogadores.carregando}</div>}
 
         {error && !loading && (
-          <div className="mt-4 text-sm text-red-600">Erro ao carregar jogadores: {error}</div>
+          <div className="mt-4 text-sm text-red-600">{t.common.erro}: {error}</div>
         )}
 
         {!loading && !error && filtered.length === 0 && (
-          <div className="mt-4 text-sm text-gray-600">Nenhum jogador com os filtros atuais.</div>
+          <div className="mt-4 text-sm text-gray-600">{t.jogadores.nenhumJogador}</div>
         )}
 
         {/* ESCOPO EXPORTÁVEL */}
@@ -491,28 +500,28 @@ export default function JogadoresPage() {
                     <thead>
                       <tr>
                         <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                          Jogador
+                          {t.jogadores.jogador}
                         </th>
                         <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                          Clube
+                          {t.jogadores.clube}
                         </th>
                         <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                          Idade
+                          {t.jogadores.idade}
                         </th>
                         <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                          Pé
+                          {t.jogadores.pe}
                         </th>
                         <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                          Altura
+                          {t.jogadores.altura}
                         </th>
                         <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                          Situação
+                          {t.jogadores.situacao}
                         </th>
                         <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                          Valor
+                          {t.jogadores.valor}
                         </th>
                         <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left font-bold uppercase tracking-wider text-slate-900">
-                          Posse
+                          {t.jogadores.posse}
                         </th>
                       </tr>
 

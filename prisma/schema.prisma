@@ -54,6 +54,8 @@ model Player {
   valorMercado       Float
   altura             Float?
   situacao           String?
+  contratoInicio     DateTime?
+  contratoFim        DateTime?
   imagemUrl          String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt

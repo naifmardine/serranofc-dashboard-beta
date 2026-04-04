@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../auth/AuthContext";
+import { useI18n } from "@/contexts/I18nContext";
+import LanguageSwitcher from "@/components/Atoms/LanguageSwitcher";
 
 export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading, login } = useAuth();
+  const { t } = useI18n();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,7 +44,7 @@ export default function LoginClient() {
       await login(email, password);
 
     } catch (err: any) {
-      setError(err?.message || "Erro ao fazer login");
+      setError(err?.message || t.login.erroLogin);
       setIsLoading(false);
     }
   }
@@ -49,7 +52,7 @@ export default function LoginClient() {
   if (loading) {
     return (
       <div className="relative min-h-dvh grid place-items-center bg-[#0b1739]">
-        <div className="text-white">Carregando...</div>
+        <div className="text-white">{t.login.carregando}</div>
       </div>
     );
   }
@@ -64,6 +67,10 @@ export default function LoginClient() {
         }}
       />
 
+      <div className="absolute top-4 right-4 z-20">
+        <LanguageSwitcher />
+      </div>
+
       <form
         className="relative z-10 w-[92%] max-w-[520px] bg-white rounded-[18px] shadow-[0_10px_30px_rgba(0,0,0,0.2)] p-7 pb-6"
         onSubmit={onSubmit}
@@ -77,11 +84,11 @@ export default function LoginClient() {
         </div>
 
         <h1 className="text-center text-xl font-semibold mb-[18px]">
-          Serrano Football Club
+          {t.login.title}
         </h1>
 
         <label className="block mb-3.5">
-          <span className="block text-xs text-gray-700 mb-1.5">Email</span>
+          <span className="block text-xs text-gray-700 mb-1.5">{t.login.email}</span>
           <input
             className="w-full border border-gray-200 rounded-[10px] px-3 py-2.5 outline-none 
                        focus:border-indigo-300 focus:ring-[3px] focus:ring-indigo-500/20"
@@ -94,7 +101,7 @@ export default function LoginClient() {
         </label>
 
         <label className="block mb-3.5">
-          <span className="block text-xs text-gray-700 mb-1.5">Senha</span>
+          <span className="block text-xs text-gray-700 mb-1.5">{t.login.senha}</span>
           <input
             className="w-full border border-gray-200 rounded-[10px] px-3 py-2.5 outline-none
                        focus:border-indigo-300 focus:ring-[3px] focus:ring-indigo-500/20"
@@ -116,11 +123,11 @@ export default function LoginClient() {
           disabled={isLoading}
           type="submit"
         >
-          {isLoading ? "Entrando..." : "Log in"}
+          {isLoading ? t.login.entrando : t.login.entrar}
         </button>
 
         <p className="mt-4 text-center text-xs text-gray-600">
-          Ao continuar, você concorda com os Termos e a Política de Privacidade.
+          {t.login.termos}
         </p>
       </form>
     </div>

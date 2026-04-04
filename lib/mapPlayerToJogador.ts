@@ -72,6 +72,8 @@ export function mapPlayerToJogador(p: Player, club?: ClubLite): Jogador {
     imagemUrl: (p as any).imagemUrl ?? null,
     altura: (p as any).altura ?? null,
     situacao: (p as any).situacao ?? null,
+    contratoInicio: toIso((p as any).contratoInicio),
+    contratoFim: toIso((p as any).contratoFim),
     possePct: (p as any).possePct ?? null,
 
     createdAt: toIso((p as any).createdAt) ?? undefined,

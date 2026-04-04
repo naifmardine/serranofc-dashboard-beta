@@ -8,6 +8,7 @@ import PageTitle from "@/components/Atoms/PageTitle";
 import SuccessDialog from "@/components/Atoms/SuccessDialog";
 import JogadorForm, { type JogadorFormModel } from "@/components/JogadorForm";
 import AdminButton from "@/components/Atoms/AdminButton";
+import { useI18n } from "@/contexts/I18nContext";
 
 function createEmptyForm(): JogadorFormModel {
   return {
@@ -21,6 +22,8 @@ function createEmptyForm(): JogadorFormModel {
     possePct: null,
     representacao: "",
     situacao: "",
+    contratoInicio: null,
+    contratoFim: null,
     numeroCamisa: null,
     altura: null,
     imagemUrl: "",
@@ -43,6 +46,7 @@ function createEmptyForm(): JogadorFormModel {
 
 export default function NovoJogadorPage() {
   const router = useRouter();
+  const { t } = useI18n();
 
   const [form, setForm] = useState<JogadorFormModel>(() => createEmptyForm());
   const [saving, setSaving] = useState(false);
@@ -61,8 +65,8 @@ export default function NovoJogadorPage() {
 
     try {
       const nome = (form.nome ?? "").trim();
-      if (!nome) throw new Error("Preencha o nome do jogador.");
-      if (!form.clubeId) throw new Error("Selecione um clube cadastrado.");
+      if (!nome) throw new Error(t.adminNovo.preenchaNome);
+      if (!form.clubeId) throw new Error(t.adminNovo.selecioneClube);
 
       const payload: any = { ...form };
       delete payload.clubeRef;
@@ -82,14 +86,14 @@ export default function NovoJogadorPage() {
       const created = data?.jogador ?? data?.player ?? (data?.id ? data : null);
 
       if (!created?.id) {
-        throw new Error("Jogador criado, mas a API não retornou o ID.");
+        throw new Error(t.adminNovo.criadoSemId);
       }
 
       setCreatedId(created.id);
-      setSuccessMsg("Jogador criado com sucesso.");
+      setSuccessMsg(t.adminNovo.criadoSucesso);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Erro ao criar jogador.");
+      setError(err.message || t.adminNovo.erroCriar);
     } finally {
       setSaving(false);
     }
@@ -102,14 +106,14 @@ export default function NovoJogadorPage() {
           type="button"
           onClick={() => router.push(`/jogadores/${createdId}`)}
           className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-gray-50"
-          title="Ver jogador"
+          title={t.adminNovo.verJogador}
         >
           <Eye className="h-4 w-4" />
-          Ver jogador
+          {t.adminNovo.verJogador}
         </button>
       ) : null}
 
-      <AdminButton label="Voltar" icon={ArrowLeft} href="/admin/jogadores" />
+      <AdminButton label={t.adminNovo.voltar} icon={ArrowLeft} href="/admin/jogadores" />
     </div>
   );
 
@@ -117,10 +121,10 @@ export default function NovoJogadorPage() {
     <>
       <SuccessDialog
         open={!!successMsg}
-        title="Jogador criado"
+        title={t.adminNovo.jogadorCriado}
         description={successMsg ?? undefined}
-        secondaryLabel="Criar outro"
-        primaryLabel="Ir para admin"
+        secondaryLabel={t.adminNovo.criarOutro}
+        primaryLabel={t.adminNovo.irParaAdmin}
         onSecondary={() => {
           setSuccessMsg(null);
           setCreatedId(null);
@@ -136,11 +140,11 @@ export default function NovoJogadorPage() {
       <section className="mx-auto w-full max-w-5xl bg-gray-50 p-6">
         <PageTitle
           base="Admin"
-          title="Novo jogador"
-          subtitle="Cadastre um novo jogador e vincule a um clube."
+          title={t.adminNovo.title}
+          subtitle={t.adminNovo.subtitle}
           actions={headerActions}
           className="mb-6"
-          crumbLabel="Jogadores"
+          crumbLabel={t.adminNovo.jogadores}
         />
 
         {error && (
@@ -154,7 +158,7 @@ export default function NovoJogadorPage() {
           setForm={setForm}
           onSubmit={handleSubmit}
           saving={saving}
-          submitLabel={saving ? "Criando..." : "Criar jogador"}
+          submitLabel={saving ? t.adminNovo.criando : t.adminNovo.criarJogador}
           onCancel={() => router.push("/admin/jogadores")}
           requireClub
         />

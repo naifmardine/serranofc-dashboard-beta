@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import PageTitle from "@/components/Atoms/PageTitle";
 import ConfirmDeleteDialog from "@/components/Atoms/ConfirmDeleteDialog";
+import { useI18n } from "@/contexts/I18nContext";
 import {
   FileText,
   Trash2,
@@ -35,6 +36,7 @@ function formatDate(iso: string) {
 }
 
 export default function RelatoriosPage() {
+  const { t } = useI18n();
   const [reports, setReports] = useState<ReportSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,7 +55,7 @@ export default function RelatoriosPage() {
   useEffect(() => {
     fetch("/api/reports")
       .then(async (r) => {
-        if (!r.ok) throw new Error("Erro ao carregar relatórios.");
+        if (!r.ok) throw new Error(t.common.erro);
         return r.json();
       })
       .then((d) => setReports(d?.reports ?? []))
@@ -79,12 +81,12 @@ export default function RelatoriosPage() {
 
     const nextTitle = renameValue.trim();
     if (!nextTitle) {
-      setRenameError("Digite um título válido.");
+      setRenameError(t.relatorios.tituloInvalido);
       return;
     }
 
     if (nextTitle.length > 200) {
-      setRenameError("O título pode ter no máximo 200 caracteres.");
+      setRenameError(t.relatorios.tituloMax200);
       return;
     }
 
@@ -106,7 +108,7 @@ export default function RelatoriosPage() {
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data?.error || "Erro ao renomear o relatório.");
+        throw new Error(data?.error || t.relatorios.erroRenomear);
       }
 
       setReports((prev) =>
@@ -117,7 +119,7 @@ export default function RelatoriosPage() {
 
       closeRenameModal();
     } catch (err: any) {
-      setRenameError(err?.message || "Erro ao renomear o relatório.");
+      setRenameError(err?.message || t.relatorios.erroRenomear);
     } finally {
       setRenaming(false);
     }
@@ -135,7 +137,7 @@ export default function RelatoriosPage() {
       });
 
       if (!response.ok) {
-        let message = "Erro ao deletar o relatório.";
+        let message = t.relatoriosExtra.erroDeletar;
         try {
           const data = await response.json();
           if (data?.error) message = data.error;
@@ -158,7 +160,7 @@ export default function RelatoriosPage() {
       className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-gray-50"
     >
       <Plus className="h-3.5 w-3.5" style={{ color: SERRANO_BLUE }} />
-      Novo chat
+      {t.relatorios.novoChat}
     </Link>
   );
 
@@ -167,9 +169,9 @@ export default function RelatoriosPage() {
       <section className="w-full bg-gray-50 p-6">
         <div className="mx-auto w-full max-w-5xl">
           <PageTitle
-            base="Principal"
-            title="Relatórios"
-            subtitle="Análises geradas pelo Serrano AI"
+            base={t.common.principal}
+            title={t.relatorios.title}
+            subtitle={t.relatorios.subtitle}
             actions={headerActions}
           />
 
@@ -177,17 +179,17 @@ export default function RelatoriosPage() {
             {loading ? (
               <div className="flex items-center justify-center gap-2 py-16 text-sm text-gray-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Carregando relatórios…
+                {t.relatorios.carregando}
               </div>
             ) : reports.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-gray-200 bg-white py-20 text-center shadow-sm">
                 <FileText className="h-10 w-10 text-gray-300" />
                 <div>
                   <p className="text-sm font-semibold text-slate-700">
-                    Nenhum relatório ainda
+                    {t.relatorios.nenhumRelatorio}
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
-                    Gere um relatório a partir de um chat no Serrano AI.
+                    {t.relatorios.nenhumRelatorioDesc}
                   </p>
                 </div>
 
@@ -197,7 +199,7 @@ export default function RelatoriosPage() {
                   style={{ background: SERRANO_BLUE }}
                 >
                   <MessageSquare className="h-4 w-4" />
-                  Ir para o chat
+                  {t.relatorios.irParaChat}
                 </Link>
               </div>
             ) : (
@@ -205,7 +207,7 @@ export default function RelatoriosPage() {
                 <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
                   <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
                     {reports.length}{" "}
-                    {reports.length === 1 ? "relatório" : "relatórios"}
+                    {reports.length === 1 ? t.relatorios.relatorio : t.relatorios.relatorios}
                   </span>
                 </div>
 
@@ -239,7 +241,7 @@ export default function RelatoriosPage() {
                             type="button"
                             onClick={() => openRenameModal(report)}
                             className="p-2 rounded-md text-white transition bg-yellow-500 hover:bg-yellow-600"
-                            title="Renomear"
+                            title={t.relatorios.renomear}
                           >
                             <Pencil size={16} />
                           </button>
@@ -248,7 +250,7 @@ export default function RelatoriosPage() {
                             type="button"
                             onClick={() => setReportToDelete(report)}
                             className="p-2 rounded-md text-white transition bg-red-500 hover:bg-red-600"
-                            title="Deletar"
+                            title={t.relatorios.deletar}
                             disabled={isDeleting}
                           >
                             {isDeleting ? (
@@ -263,7 +265,7 @@ export default function RelatoriosPage() {
                           href={`/relatorios/${report.id}`}
                           className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-gray-50"
                         >
-                          Abrir
+                          {t.relatorios.abrir}
                           <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
                         </Link>
                       </div>
@@ -278,8 +280,8 @@ export default function RelatoriosPage() {
 
       <ConfirmDeleteDialog
         open={!!reportToDelete}
-        title="Confirmar deleção do relatório"
-        description="Essa ação remove permanentemente o relatório salvo. Não poderá ser desfeita."
+        title={t.relatorios.confirmarDelecao}
+        description={t.relatorios.confirmarDelecaoDesc}
         itemName={reportToDelete?.title}
         expectedPhrase="DELETAR"
         onCancel={() => {
@@ -300,7 +302,7 @@ export default function RelatoriosPage() {
               <div className="flex items-center gap-2">
                 <Pencil className="h-4 w-4" style={{ color: SERRANO_BLUE }} />
                 <h2 className="text-sm font-semibold text-slate-800">
-                  Renomear relatório
+                  {t.relatorios.renomearTitle}
                 </h2>
               </div>
 
@@ -316,14 +318,14 @@ export default function RelatoriosPage() {
 
             <div className="mb-4">
               <label className="mb-1.5 block text-xs font-medium text-slate-600">
-                Novo título
+                {t.relatorios.novoTitulo}
               </label>
 
               <input
                 type="text"
                 value={renameValue}
                 onChange={(e) => setRenameValue(e.target.value)}
-                placeholder="Digite o novo título"
+                placeholder={t.relatorios.digiteTitulo}
                 maxLength={200}
                 autoFocus
                 disabled={renaming}
@@ -337,7 +339,7 @@ export default function RelatoriosPage() {
               />
 
               <p className="mt-1.5 text-xs text-gray-400">
-                O título pode ter até 200 caracteres.
+                {t.relatorios.tituloMaxChars}
               </p>
 
               {renameError && (
@@ -354,7 +356,7 @@ export default function RelatoriosPage() {
                 disabled={renaming}
                 className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-gray-50 disabled:opacity-60"
               >
-                Cancelar
+                {t.relatorios.cancelar}
               </button>
 
               <button
@@ -365,7 +367,7 @@ export default function RelatoriosPage() {
                 style={{ background: SERRANO_BLUE }}
               >
                 {renaming && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                {renaming ? "Salvando…" : "Salvar"}
+                {renaming ? t.relatorios.salvando : t.relatorios.salvar}
               </button>
             </div>
           </div>

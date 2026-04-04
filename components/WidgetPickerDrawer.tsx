@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useI18n } from "@/contexts/I18nContext";
 import type {
   DashboardLayout,
   WidgetDefinition,
@@ -34,6 +35,7 @@ export function WidgetPickerDrawer({
   widgets,
   onChange,
 }: Props) {
+  const { t } = useI18n();
   const [group, setGroup] = useState<WidgetGroup | "all">("all");
   const [showActive, setShowActive] = useState(true);
 
@@ -85,6 +87,19 @@ export function WidgetPickerDrawer({
     });
   }
 
+  function getGroupLabel(g: WidgetGroup) {
+    switch (g) {
+      case "serrano":
+        return t.widgetPicker.serrano;
+      case "market":
+        return t.widgetPicker.mercado;
+      case "compare":
+        return t.widgetPicker.comparativos;
+      default:
+        return g;
+    }
+  }
+
   if (!open) return null;
 
   return (
@@ -92,7 +107,7 @@ export function WidgetPickerDrawer({
       {/* Overlay */}
       <button
         type="button"
-        aria-label="Fechar"
+        aria-label={t.widgetPicker.fechar}
         className="flex-1 bg-black/35 cursor-pointer"
         onClick={onClose}
       />
@@ -119,10 +134,10 @@ export function WidgetPickerDrawer({
 
                 <div className="min-w-0">
                   <div className="text-sm font-extrabold text-slate-900">
-                    Personalizar dashboard
+                    {t.widgetPicker.personalizar}
                   </div>
                   <div className="mt-0.5 text-xs text-slate-500">
-                    Ative/desative widgets. Use os grupos para navegar.
+                    {t.widgetPicker.descricao}
                   </div>
                 </div>
               </div>
@@ -131,13 +146,12 @@ export function WidgetPickerDrawer({
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  {layout.enabled.length} ativo
-                  {layout.enabled.length === 1 ? "" : "s"}
+                  {layout.enabled.length} {layout.enabled.length === 1 ? t.widgetPicker.ativo : t.widgetPicker.ativos}
                 </span>
 
                 <span className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
                   <Layers className="h-3.5 w-3.5" />
-                  {widgets.length} disponíve{widgets.length === 1 ? "l" : "is"}
+                  {widgets.length} {widgets.length === 1 ? t.widgetPicker.disponivel : t.widgetPicker.disponiveis}
                 </span>
 
                 {/* botão com cara de botão */}
@@ -155,9 +169,9 @@ export function WidgetPickerDrawer({
                     backgroundColor: SERRANO_BLUE,
                     borderColor: `${SERRANO_BLUE}40`,
                   }}
-                  title="Ver widgets ativos"
+                  title={t.widgetPicker.verAtivos}
                 >
-                  {showActive ? "Ocultar ativos" : "Ver ativos"}
+                  {showActive ? t.widgetPicker.ocultarAtivos : t.widgetPicker.verAtivos}
                   <ChevronDown
                     className={[
                       "h-3.5 w-3.5 transition-transform",
@@ -174,10 +188,10 @@ export function WidgetPickerDrawer({
                 onClick={clearAll}
                 disabled={layout.enabled.length === 0}
                 className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60 cursor-pointer"
-                title="Desativar todos"
+                title={t.widgetPicker.limpar}
               >
                 <Trash2 className="h-4 w-4" />
-                Limpar
+                {t.widgetPicker.limpar}
               </button>
 
               <button
@@ -185,9 +199,9 @@ export function WidgetPickerDrawer({
                 onClick={onClose}
                 className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-extrabold text-black cursor-pointer hover:brightness-95"
                 style={{ backgroundColor: SERRANO_YELLOW }}
-                title="Fechar"
+                title={t.widgetPicker.fechar}
               >
-                Fechar
+                {t.widgetPicker.fechar}
               </button>
             </div>
           </div>
@@ -197,10 +211,10 @@ export function WidgetPickerDrawer({
             <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50/40 p-3">
               <div className="mb-2 flex items-center justify-between">
                 <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Ativos
+                  {t.widgetPicker.ativos}
                 </div>
                 <div className="text-xs text-slate-500">
-                  Clique num chip para remover
+                  {t.widgetPicker.cliqueRemover}
                 </div>
               </div>
 
@@ -212,7 +226,7 @@ export function WidgetPickerDrawer({
 
               {layout.enabled.length === 0 && (
                 <div className="mt-2 text-sm text-slate-500">
-                  Nenhum widget ativo.
+                  {t.widgetPicker.nenhumAtivo}
                 </div>
               )}
             </div>
@@ -227,7 +241,7 @@ export function WidgetPickerDrawer({
               <GroupTab
                 active={group === "all"}
                 onClick={() => setGroup("all")}
-                label="Todos"
+                label={t.widgetPicker.todos}
                 meta={`${groupsWithCount.all.enabled}/${groupsWithCount.all.total}`}
               />
 
@@ -241,7 +255,7 @@ export function WidgetPickerDrawer({
                     key={g}
                     active={group === g}
                     onClick={() => setGroup(g)}
-                    label={labelForGroup(g)}
+                    label={getGroupLabel(g)}
                     meta={`${c.enabled}/${c.total}`}
                   />
                 );
@@ -253,11 +267,10 @@ export function WidgetPickerDrawer({
           <div className="px-4 py-4">
             <div className="mb-3 flex items-center justify-between">
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Widgets
+                {t.widgetPicker.widgets}
               </div>
               <div className="text-xs text-slate-500">
-                {filteredWidgets.length} resultado
-                {filteredWidgets.length === 1 ? "" : "s"}
+                {filteredWidgets.length} {filteredWidgets.length === 1 ? t.widgetPicker.resultado : t.widgetPicker.resultados}
               </div>
             </div>
 
@@ -288,7 +301,7 @@ export function WidgetPickerDrawer({
 
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700">
-                          {labelForGroup(w.group)}
+                          {getGroupLabel(w.group)}
                         </span>
 
                         {enabled ? (
@@ -300,11 +313,11 @@ export function WidgetPickerDrawer({
                               border: `1px solid ${SERRANO_BLUE}20`,
                             }}
                           >
-                            Ativo
+                            {t.widgetPicker.ativoLabel}
                           </span>
                         ) : (
                           <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500">
-                            Inativo
+                            {t.widgetPicker.inativoLabel}
                           </span>
                         )}
                       </div>
@@ -327,11 +340,11 @@ export function WidgetPickerDrawer({
                       }
                       title={
                         enabled
-                          ? "Remover do dashboard"
-                          : "Adicionar ao dashboard"
+                          ? t.widgetPicker.removerDashboard
+                          : t.widgetPicker.adicionarDashboard
                       }
                     >
-                      {enabled ? "Remover" : "Adicionar"}
+                      {enabled ? t.widgetPicker.remover : t.widgetPicker.adicionar}
                     </button>
                   </div>
                 );
@@ -339,7 +352,7 @@ export function WidgetPickerDrawer({
 
               {filteredWidgets.length === 0 && (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                  Nenhum widget nesse grupo.
+                  {t.widgetPicker.nenhumWidget}
                 </div>
               )}
             </div>
@@ -355,19 +368,6 @@ export function WidgetPickerDrawer({
 /* ------------------------------------------------------------------ */
 
 const GROUPS: WidgetGroup[] = ["serrano", "market", "compare"];
-
-function labelForGroup(group: WidgetGroup) {
-  switch (group) {
-    case "serrano":
-      return "Serrano";
-    case "market":
-      return "Mercado";
-    case "compare":
-      return "Comparativos";
-    default:
-      return group;
-  }
-}
 
 function GroupTab({
   active,

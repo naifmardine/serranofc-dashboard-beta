@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Role } from "@prisma/client";
+import { useI18n } from "@/contexts/I18nContext";
 
 interface User {
   id: string;
@@ -44,6 +45,7 @@ function isAuthStatus(status: number) {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useI18n();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -171,7 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || "Login failed");
+        throw new Error(data?.error || t.login.erroLogin);
       }
 
       const data = await res.json().catch(() => ({}));

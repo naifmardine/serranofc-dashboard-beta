@@ -22,6 +22,8 @@ type ExportPdfParams = {
   footer?: {
     leftText?: string;
     rightText?: string;
+    pageLabel?: string;
+    ofLabel?: string;
   };
 };
 
@@ -306,10 +308,10 @@ export function useDashboardPdfExport() {
             pdf.setFontSize(9);
             pdf.setTextColor(100, 116, 139);
 
-            const left = footer.leftText ?? "Serrano FC";
+            const left = footer.leftText ?? "";
             pdf.text(left, marginMm, bottomY);
 
-            const pageLabel = `Página ${pageIndex1} de ${totalPages}`;
+            const pageLabel = `${footer.pageLabel ?? "Página"} ${pageIndex1} ${footer.ofLabel ?? "de"} ${totalPages}`;
             pdf.text(pageLabel, pageW - marginMm, bottomY, { align: "right" });
 
             if (footer.rightText) {

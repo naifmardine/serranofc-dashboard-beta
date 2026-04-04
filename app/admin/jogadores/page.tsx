@@ -7,6 +7,7 @@ import PageTitle from "@/components/Atoms/PageTitle";
 import AdminRow from "@/components/AdminRow";
 import AdminButton from "@/components/Atoms/AdminButton";
 import ConfirmDeleteDialog from "@/components/Atoms/ConfirmDeleteDialog";
+import { useI18n } from "@/contexts/I18nContext";
 
 function formatCreatedAt(input: any) {
   if (!input) return "--/--/----";
@@ -16,6 +17,7 @@ function formatCreatedAt(input: any) {
 }
 
 export default function AdminJogadoresPage() {
+  const { t } = useI18n();
   const [jogadores, setJogadores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +44,7 @@ export default function AdminJogadoresPage() {
       } catch (e: any) {
         if (active) {
           setJogadores([]);
-          setError(e?.message || "Erro ao carregar jogadores");
+          setError(e?.message || t.adminJogadoresExtra.erroCarregar);
         }
       } finally {
         if (active) setLoading(false);
@@ -78,21 +80,21 @@ export default function AdminJogadoresPage() {
       setDelTarget(null);
     } catch (err: any) {
       console.error(err);
-      alert(err?.message ?? "Erro ao deletar jogador.");
+      alert(err?.message ?? t.adminJogadores.erroDeletar);
       // mantém o modal aberto
     }
   }
 
   const headerActions = (
-    <AdminButton label="Novo Jogador" icon={PlusCircle} href="/admin/jogadores/novo" />
+    <AdminButton label={t.adminJogadores.novoJogador} icon={PlusCircle} href="/admin/jogadores/novo" />
   );
 
   return (
     <section className="mx-auto w-full max-w-6xl bg-gray-50 p-6">
       <ConfirmDeleteDialog
         open={delOpen}
-        title="Deletar jogador"
-        description="Isso é irreversível. O jogador será removido do banco."
+        title={t.adminJogadores.deletarTitle}
+        description={t.adminJogadores.deletarDesc}
         itemName={delTarget?.nome ?? ""}
         expectedPhrase={expectedPhrase}
         onCancel={() => {
@@ -104,11 +106,11 @@ export default function AdminJogadoresPage() {
 
       <PageTitle
         base="Admin"
-        title="Jogadores"
-        subtitle="Gerencie o elenco (criar, editar e remover jogadores)."
+        title={t.adminJogadores.title}
+        subtitle={t.adminJogadores.subtitle}
         actions={headerActions}
         className="mb-6"
-        crumbLabel="Jogadores"
+        crumbLabel={t.adminJogadores.title}
       />
 
       {error && !loading && (
@@ -121,18 +123,18 @@ export default function AdminJogadoresPage() {
         {/* Cabeçalho */}
         <div className="grid grid-cols-[0.4fr_1.6fr_1fr_1fr_0.7fr] border-b border-gray-200 bg-gray-50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-700">
           <span />
-          <span>Jogador</span>
-          <span>Criado em</span>
+          <span>{t.adminJogadores.jogador}</span>
+          <span>{t.adminJogadores.criadoEm}</span>
           <span />
-          <span className="pr-1 text-right">Ações</span>
+          <span className="pr-1 text-right">{t.adminJogadores.acoes}</span>
         </div>
 
         {/* Linhas */}
         {loading ? (
-          <div className="py-10 text-center text-gray-500">Carregando jogadores...</div>
+          <div className="py-10 text-center text-gray-500">{t.adminJogadores.carregando}</div>
         ) : jogadores.length === 0 ? (
           <div className="py-10 text-center text-gray-500">
-            Nenhum jogador encontrado.
+            {t.adminJogadores.nenhumJogador}
           </div>
         ) : (
           <div className="divide-y divide-gray-100">

@@ -5,6 +5,7 @@ import { LayoutGrid, List, X } from "lucide-react";
 import type { Jogador } from "@/type/jogador";
 import Card from "@/components/Card";
 import PlayerRow from "@/components/PlayerRow";
+import { useI18n } from "@/contexts/I18nContext";
 
 export type View = "grid" | "list";
 
@@ -26,6 +27,7 @@ export default function PlayersModal({
   onView: (v: View) => void;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   if (!open) return null;
 
   return (
@@ -46,12 +48,12 @@ export default function PlayersModal({
               <span className="hidden h-5 w-px bg-slate-200 sm:inline-block" />
 
               <span className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11px] font-extrabold text-slate-700">
-                {players.length} jogador{players.length === 1 ? "" : "es"}
+                {players.length} {players.length === 1 ? t.playersModal.jogador : t.playersModal.jogadores}
               </span>
             </div>
 
             <div className="mt-1 text-xs text-slate-500">
-              Visualize em cards ou lista. Feche quando terminar.
+              {t.playersModal.descricao}
             </div>
           </div>
 
@@ -60,7 +62,7 @@ export default function PlayersModal({
             <div
               className="inline-flex overflow-hidden rounded-xl border border-gray-200 bg-white"
               role="group"
-              aria-label="Alternar visualização"
+              aria-label={t.playersModal.alternarVisualizacao}
             >
               <button
                 type="button"
@@ -72,10 +74,10 @@ export default function PlayersModal({
                   view === "grid" ? "text-black" : "text-slate-800",
                 ].join(" ")}
                 style={view === "grid" ? { backgroundColor: SERRANO_YELLOW } : undefined}
-                title="Exibir em cards"
+                title={t.playersModal.exibirCards}
               >
                 <LayoutGrid size={16} />
-                Cards
+                {t.playersModal.cards}
               </button>
 
               <button
@@ -88,10 +90,10 @@ export default function PlayersModal({
                   view === "list" ? "text-black" : "text-slate-800",
                 ].join(" ")}
                 style={view === "list" ? { backgroundColor: SERRANO_YELLOW } : undefined}
-                title="Exibir em lista"
+                title={t.playersModal.exibirLista}
               >
                 <List size={16} />
-                Lista
+                {t.playersModal.lista}
               </button>
             </div>
 
@@ -101,12 +103,12 @@ export default function PlayersModal({
               onClick={onClose}
               className="cursor-pointer rounded-xl border border-white/20 px-3 py-2 text-xs font-extrabold text-white shadow-sm transition hover:opacity-95"
               style={{ backgroundColor: SERRANO_BLUE }}
-              title="Fechar"
-              aria-label="Fechar modal"
+              title={t.playersModal.fechar}
+              aria-label={t.playersModal.fechar}
             >
               <span className="inline-flex items-center gap-2">
                 <X size={16} />
-                Fechar
+                {t.playersModal.fechar}
               </span>
             </button>
           </div>
@@ -116,7 +118,7 @@ export default function PlayersModal({
         <div className="h-[calc(90vh-68px)] overflow-auto px-4 py-4">
           {players.length === 0 ? (
             <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-              Nenhum jogador encontrado.
+              {t.playersModal.nenhumJogador}
             </div>
           ) : view === "grid" ? (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
@@ -130,28 +132,28 @@ export default function PlayersModal({
                 <thead>
                   <tr>
                     <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-                      Jogador
+                      {t.jogadores.jogador}
                     </th>
                     <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-                      Clube
+                      {t.playersModal.clube}
                     </th>
                     <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-                      Idade
+                      {t.playersModal.idade}
                     </th>
                     <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-                      Pé
+                      {t.playersModal.pe}
                     </th>
                     <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-                      Altura
+                      {t.playersModal.altura}
                     </th>
                     <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-                      Situação
+                      {t.playersModal.situacao}
                     </th>
                     <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-                      Valor
+                      {t.playersModal.valor}
                     </th>
                     <th className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-[11px] font-extrabold uppercase tracking-wider text-slate-900">
-                      Posse
+                      {t.playersModal.posse}
                     </th>
                   </tr>
 

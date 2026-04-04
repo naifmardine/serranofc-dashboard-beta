@@ -75,6 +75,8 @@ export async function PATCH(
       imagemUrl,
       altura,
       situacao,
+      contratoInicio,
+      contratoFim,
       possePct,
 
       anoNascimento,
@@ -145,6 +147,12 @@ export async function PATCH(
       ...(imagemUrl !== undefined && { imagemUrl }),
       ...(altura !== undefined && { altura }),
       ...(situacao !== undefined && { situacao }),
+      ...(contratoInicio !== undefined && {
+        contratoInicio: contratoInicio ? new Date(contratoInicio) : null,
+      }),
+      ...(contratoFim !== undefined && {
+        contratoFim: contratoFim ? new Date(contratoFim) : null,
+      }),
       ...(possePct !== undefined && { possePct }),
 
       ...(anoNascimento !== undefined && { anoNascimento }),

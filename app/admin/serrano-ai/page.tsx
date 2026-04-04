@@ -7,6 +7,7 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
+import { useI18n } from "@/contexts/I18nContext";
 import PageTitle from "@/components/Atoms/PageTitle";
 import { ChatMessageBubble } from "@/components/Chat/ChatMessageBubble";
 import { ChatHistoryPanel } from "@/components/Chat/ChatHistoryPanel";
@@ -60,12 +61,13 @@ function SendAnimatedButton({
   onClick: () => void;
   loading?: boolean;
 }) {
+  const { t } = useI18n();
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled || !!loading}
-      title="Enviar"
+      title={t.serranoAi.enviar}
       className={cn(
         "sfc-send-btn group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-2xl border px-4 text-sm font-semibold shadow-sm transition active:scale-[0.98]",
         disabled || loading
@@ -100,7 +102,7 @@ function SendAnimatedButton({
         </span>
       </span>
       <span className="sfc-send-text block">
-        {loading ? "Enviando…" : "Enviar"}
+        {loading ? t.serranoAi.enviando : t.serranoAi.enviar}
       </span>
       {!disabled && !loading ? (
         <span
@@ -135,31 +137,31 @@ function uuidish() {
     .slice(2, 10)}`;
 }
 
-function mapFriendlyError(payload: any, status: number) {
+function mapFriendlyError(payload: any, status: number, t: any) {
   const detail =
     payload?.detail ?? payload?.error ?? payload?.message ?? payload?.raw ?? "";
   const text = typeof detail === "string" ? detail : JSON.stringify(detail);
 
   if (status === 401)
-    return "Acesso negado (401). Verifique a chave interna e o proxy do Next.";
+    return t.serranoAi.acessoNegado;
   if (status === 402 || /insufficient|funds|quota|billing|payment/i.test(text))
-    return "OpenAI sem créditos / quota estourada. Verifique billing e limites.";
+    return t.serranoAi.semCreditos;
   if (status === 429 || /rate/i.test(text))
-    return "Muitas requisições (429). Aguarde e tente novamente.";
+    return t.serranoAi.muitasRequisicoes;
   if (status === 504 || /timeout/i.test(text))
-    return "Timeout na resposta do backend. Tente novamente.";
-  if (status >= 500) return "Erro no servidor. Confira logs do FastAPI/Next.";
+    return t.serranoAi.timeoutBackend;
+  if (status >= 500) return t.serranoAi.erroServidor;
   if (/fetch failed|ECONNREFUSED|ENOTFOUND|upstream/i.test(text))
-    return "Não conectou no backend. Confira se o FastAPI está rodando e o BASE_URL.";
-  return text ? `Falha: ${text}` : "Falha ao processar a solicitação.";
+    return t.serranoAi.naoConectou;
+  return text ? `Falha: ${text}` : t.serranoAi.falhaProcessar;
 }
 
-function makeTitle(firstMessage: string): string {
+function makeTitle(firstMessage: string, fallback = "Nova conversa"): string {
   return (
     firstMessage
       .replace(/\[Arquivo:[^\]]+\]\s*/g, "")
       .trim()
-      .slice(0, 80) || "Nova conversa"
+      .slice(0, 80) || fallback
   );
 }
 
@@ -174,6 +176,7 @@ function formatRelative(iso: string) {
 }
 
 export default function SerranoChatPage() {
+  const { t } = useI18n();
   const [input, setInput] = useState("");
   const [plusOpen, setPlusOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -181,7 +184,7 @@ export default function SerranoChatPage() {
   const [dbConversationId, setDbConversationId] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string>(uuidish());
   const [conversationTitle, setConversationTitle] =
-    useState<string>("Nova conversa");
+    useState<string>("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -221,41 +224,36 @@ export default function SerranoChatPage() {
     () => [
       {
         key: "portfolio",
-        label: "Portfólio",
+        label: t.serranoAi.portfolio,
         icon: <Trophy className="h-3.5 w-3.5" />,
-        prompt:
-          "Analise o portfólio do Serrano: quais jogadores têm maior valor de mercado combinado com alto percentual de direitos? Identifique as melhores oportunidades de venda com ROI elevado.",
+        prompt: t.serranoAi.portfolioPrompt,
       },
       {
         key: "squad",
-        label: "Elenco",
+        label: t.serranoAi.elenco,
         icon: <Users className="h-3.5 w-3.5" />,
-        prompt:
-          "Faça uma análise completa do elenco: distribuição por posição e faixa etária, percentual médio de direitos do Serrano, e pontos de atenção. Finalize com 1 recomendação acionável.",
+        prompt: t.serranoAi.elencoPrompt,
       },
       {
         key: "market",
-        label: "Mercado",
+        label: t.serranoAi.mercadoAction,
         icon: <BarChart3 className="h-3.5 w-3.5" />,
-        prompt:
-          "Quanto o mercado está pagando por cada posição? Analise as transferências agrupadas por posição: volume, valor médio e mediana. Compare com o elenco do Serrano.",
+        prompt: t.serranoAi.mercadoPrompt,
       },
       {
         key: "transfers",
-        label: "Clubes compradores",
+        label: t.serranoAi.clubesCompradores,
         icon: <Repeat className="h-3.5 w-3.5" />,
-        prompt:
-          "Quais clubes mais compraram jogadores no mercado geral? Mostre o ranking com total de transferências e valor médio pago.",
+        prompt: t.serranoAi.clubesCompradoresPrompt,
       },
       {
         key: "opportunity",
-        label: "Oportunidades",
+        label: t.serranoAi.oportunidades,
         icon: <ArrowLeftRight className="h-3.5 w-3.5" />,
-        prompt:
-          "Identifique jogadores com maior potencial de venda: cruze valor de mercado, e % de direitos. Quem tem o melhor ROI potencial?",
+        prompt: t.serranoAi.oportunidadesPrompt,
       },
     ],
-    [],
+    [t],
   );
 
   const fetchRecentChats = useCallback(async () => {
@@ -381,7 +379,7 @@ export default function SerranoChatPage() {
     const isFirstMessage = messages.length === 0;
     let persistId: string | null = dbConversationId;
     if (isFirstMessage) {
-      persistId = await ensureDbConversation(makeTitle(userContent));
+      persistId = await ensureDbConversation(makeTitle(userContent, t.serranoAi.novaConversa));
     }
 
     try {
@@ -404,7 +402,7 @@ export default function SerranoChatPage() {
       }
 
       if (!r.ok) {
-        const msg = mapFriendlyError(data, r.status);
+        const msg = mapFriendlyError(data, r.status, t);
         setErrorBanner(msg);
 
         const errMsg: ChatMessage = {
@@ -435,7 +433,7 @@ export default function SerranoChatPage() {
       const assistantMsg: ChatMessage = {
         id: uuidish(),
         role: "assistant",
-        content: assistantText || "Ok. (resposta vazia do backend)",
+        content: assistantText || t.serranoAi.respostaVazia,
         ts: Date.now(),
       };
 
@@ -453,8 +451,8 @@ export default function SerranoChatPage() {
     } catch (e: any) {
       const msg =
         e?.name === "AbortError"
-          ? "Timeout no request."
-          : "Falha de rede ao falar com o backend.";
+          ? t.serranoAi.timeoutRequest
+          : t.serranoAi.falhaRede;
 
       setErrorBanner(msg);
 
@@ -480,7 +478,7 @@ export default function SerranoChatPage() {
     setMessages([]);
     setConversationId(uuidish());
     setDbConversationId(null);
-    setConversationTitle("Nova conversa");
+    setConversationTitle(t.serranoAi.novaConversa);
     setErrorBanner(null);
     setPendingFile(null);
     fetchRecentChats();
@@ -513,7 +511,7 @@ export default function SerranoChatPage() {
       setPendingFile(null);
       scrollToBottom("auto");
     } catch {
-      setNotice("Não foi possível carregar a conversa.");
+      setNotice(t.serranoAi.naoCarregarConversa);
       window.setTimeout(() => setNotice(null), 2000);
     } finally {
       setLoadingHistory(false);
@@ -564,7 +562,7 @@ export default function SerranoChatPage() {
       content = messages
         .map(
           (m) =>
-            `**${m.role === "user" ? "Pergunta" : "Serrano AI"}:** ${m.content}`,
+            `**${m.role === "user" ? t.serranoAi.pergunta : t.serranoAi.serranoAiLabel}:** ${m.content}`,
         )
         .join("\n\n---\n\n");
     }
@@ -585,14 +583,14 @@ export default function SerranoChatPage() {
       if (r.ok) {
         setReportModalOpen(false);
         setReportTitle("");
-        setNotice("Relatório gerado. Ver em Relatórios →");
+        setNotice(t.serranoAi.relatorioGerado);
         window.setTimeout(() => setNotice(null), 3000);
       } else {
-        setNotice("Erro ao salvar relatório.");
+        setNotice(t.serranoAi.erroSalvarRelatorio);
         window.setTimeout(() => setNotice(null), 2000);
       }
     } catch {
-      setNotice("Erro ao salvar relatório.");
+      setNotice(t.serranoAi.erroSalvarRelatorio);
       window.setTimeout(() => setNotice(null), 2000);
     } finally {
       setSavingReport(false);
@@ -602,15 +600,15 @@ export default function SerranoChatPage() {
 
   function openReportModal() {
     if (messages.length === 0) {
-      setNotice("Sem mensagens para gerar relatório.");
+      setNotice(t.serranoAi.semMensagens);
       window.setTimeout(() => setNotice(null), 1800);
       return;
     }
 
     setReportTitle(
-      conversationTitle !== "Nova conversa"
+      conversationTitle && conversationTitle !== t.serranoAi.novaConversa
         ? conversationTitle
-        : makeTitle(messages[0]?.content ?? ""),
+        : makeTitle(messages[0]?.content ?? "", t.serranoAi.novaConversa),
     );
     setReportModalOpen(true);
     setPlusOpen(false);
@@ -625,7 +623,7 @@ export default function SerranoChatPage() {
           className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition hover:bg-gray-50"
         >
           <FileText className="h-3.5 w-3.5" style={{ color: SERRANO_BLUE }} />
-          Relatório
+          {t.serranoAi.relatorio}
         </button>
       )}
       <button
@@ -634,16 +632,16 @@ export default function SerranoChatPage() {
         className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition hover:bg-gray-50"
       >
         <History className="h-3.5 w-3.5" style={{ color: SERRANO_BLUE }} />
-        Histórico
+        {t.serranoAi.historico}
       </button>
       <button
         type="button"
         onClick={resetChat}
         className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition hover:bg-gray-50"
-        title="Novo chat"
+        title={t.serranoAi.novoChat}
       >
         <Plus className="h-3.5 w-3.5" style={{ color: SERRANO_BLUE }} />
-        Novo chat
+        {t.serranoAi.novoChat}
       </button>
     </div>
   );
@@ -653,9 +651,9 @@ export default function SerranoChatPage() {
       <div className="flex h-full min-h-0 flex-col">
         <div className="shrink-0 px-6 pt-6 pb-3">
           <PageTitle
-            base="Principal"
-            title="Serrano AI"
-            subtitle="Análise conversacional de dados"
+            base={t.common.principal}
+            title={t.serranoAi.title}
+            subtitle={t.serranoAi.subtitle}
             actions={headerActions}
           />
         </div>
@@ -682,7 +680,7 @@ export default function SerranoChatPage() {
                     style={{ color: SERRANO_BLUE }}
                   />
                   <h2 className="text-sm font-semibold text-slate-800">
-                    Gerar relatório
+                    {t.serranoAi.gerarRelatorio}
                   </h2>
                 </div>
                 <button
@@ -696,13 +694,13 @@ export default function SerranoChatPage() {
 
               <div className="mb-4">
                 <label className="mb-1.5 block text-xs font-medium text-slate-600">
-                  Título do relatório
+                  {t.serranoAi.tituloRelatorio}
                 </label>
                 <input
                   type="text"
                   value={reportTitle}
                   onChange={(e) => setReportTitle(e.target.value)}
-                  placeholder="Ex: Análise de portfólio — março 2026"
+                  placeholder={t.serranoAi.placeholderTitulo}
                   className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:outline-none"
                   style={{ boxShadow: "0 0 0 3px rgba(0,51,153,0.0)" }}
                   onFocus={(e) => {
@@ -718,8 +716,7 @@ export default function SerranoChatPage() {
                   }}
                 />
                 <p className="mt-1.5 text-xs text-gray-400">
-                  O Serrano AI irá sintetizar {messages.length} mensagens em um
-                  relatório executivo.
+                  O Serrano AI irá sintetizar {messages.length} {t.serranoAi.sintetizarDesc}
                 </p>
               </div>
 
@@ -729,7 +726,7 @@ export default function SerranoChatPage() {
                   onClick={() => setReportModalOpen(false)}
                   className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-gray-50"
                 >
-                  Cancelar
+                  {t.serranoAi.cancelar}
                 </button>
                 <button
                   type="button"
@@ -742,10 +739,10 @@ export default function SerranoChatPage() {
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   )}
                   {savePhase === "synthesizing"
-                    ? "Gerando síntese…"
+                    ? t.serranoAi.gerandoSintese
                     : savePhase === "saving"
-                      ? "Salvando…"
-                      : "Gerar relatório"}
+                      ? t.serranoAi.salvandoRelatorio
+                      : t.serranoAi.gerarBtn}
                 </button>
               </div>
             </div>
@@ -765,7 +762,7 @@ export default function SerranoChatPage() {
                   <div className="mb-3 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm shadow-sm">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
                     <div>
-                      <div className="font-semibold text-red-700">Erro</div>
+                      <div className="font-semibold text-red-700">{t.serranoAi.erro}</div>
                       <div className="mt-0.5 text-xs text-red-600">
                         {errorBanner}
                       </div>
@@ -792,18 +789,17 @@ export default function SerranoChatPage() {
                       />
                     </div>
                     <h1 className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">
-                      Olá,
+                      {t.serranoAi.ola}
                     </h1>
                     <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">
-                      Analise elenco, portfólio e mercado. Cruze dados do
-                      Serrano com transferências do mercado geral.
+                      {t.serranoAi.descricao}
                     </p>
                   </div>
 
                   {recentChats.length > 0 && (
                     <div className="mt-15">
                       <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                        Conversas recentes
+                        {t.serranoAi.conversasRecentes}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {recentChats.map((chat) => (
@@ -829,7 +825,7 @@ export default function SerranoChatPage() {
                   {loadingHistory ? (
                     <div className="flex items-center justify-center gap-2 py-12 text-sm text-gray-400">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Carregando conversa…</span>
+                      <span>{t.serranoAi.carregandoConversa}</span>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -896,7 +892,7 @@ export default function SerranoChatPage() {
                         }
                         setPlusOpen((v) => !v);
                       }}
-                      title="Análises e funções"
+                      title={t.serranoAi.analises}
                       className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-gray-200 shadow-sm transition hover:brightness-95 active:scale-[0.98]"
                       style={{ background: SERRANO_BLUE, color: "white" }}
                     >
@@ -914,7 +910,7 @@ export default function SerranoChatPage() {
                       if (!file) return;
 
                       if (file.size > 2 * 1024 * 1024) {
-                        setNotice("Arquivo muito grande. Máximo: 2 MB.");
+                        setNotice(t.serranoAi.arquivoGrande);
                         window.setTimeout(() => setNotice(null), 2000);
                         return;
                       }
@@ -938,7 +934,7 @@ export default function SerranoChatPage() {
                               isImage: true,
                               objectUrl: URL.createObjectURL(file),
                             });
-                            setNotice("Imagem anexada.");
+                            setNotice(t.serranoAi.imagemAnexada);
                             window.setTimeout(() => setNotice(null), 2000);
                           } else {
                             setPendingFile({
@@ -961,7 +957,7 @@ export default function SerranoChatPage() {
 
                   <button
                     type="button"
-                    title="Anexar arquivo"
+                    title={t.serranoAi.anexarArquivo}
                     onClick={() => fileInputRef.current?.click()}
                     className={cn(
                       "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white text-slate-500 shadow-sm transition hover:bg-gray-50 active:scale-[0.98]",
@@ -983,7 +979,7 @@ export default function SerranoChatPage() {
                         autosize();
                       }}
                       onFocus={() => setPlusOpen(false)}
-                      placeholder="Pergunte algo sobre o elenco, portfólio ou mercado…"
+                      placeholder={t.serranoAi.escreva}
                       rows={1}
                       className="min-h-11 w-full resize-none rounded-2xl border-0 bg-transparent px-4 py-3 text-sm text-slate-900 placeholder:text-gray-400 focus:outline-none focus:ring-0"
                       onKeyDown={(e) => {
@@ -1011,7 +1007,7 @@ export default function SerranoChatPage() {
         {plusOpen && (
           <button
             type="button"
-            aria-label="Fechar menu"
+            aria-label={t.serranoAi.fecharMenu}
             className="fixed inset-0 z-20 cursor-default"
             onClick={() => setPlusOpen(false)}
           />
@@ -1072,7 +1068,7 @@ export default function SerranoChatPage() {
                   />
                 </div>
                 <span className="text-sm font-medium text-slate-800">
-                  Gerar relatório
+                  {t.serranoAi.gerarRelatorio}
                 </span>
               </button>
               <button
@@ -1090,7 +1086,7 @@ export default function SerranoChatPage() {
                   />
                 </div>
                 <span className="text-sm font-medium text-slate-800">
-                  Histórico
+                  {t.serranoAi.historico}
                 </span>
               </button>
             </div>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import ConfirmDeleteDialog from "@/components/Atoms/ConfirmDeleteDialog";
 import ImportTransferenciasCsvButton from "@/components/Atoms/ImportTransferenciasCSVButton";
 import { Trash2 } from "lucide-react";
+import { useI18n } from "@/contexts/I18nContext";
 
 type Row = {
   id: string;
@@ -39,6 +40,7 @@ function fmtMoney(v: any) {
 }
 
 export default function TransferenciasTable() {
+  const { t } = useI18n();
   const [q, setQ] = useState("");
   const [pos, setPos] = useState("");
   const [pais, setPais] = useState("");
@@ -90,7 +92,7 @@ export default function TransferenciasTable() {
     fetch(`/api/transferencias?${query}`, { cache: "no-store" })
       .then(async (r) => {
         const data = await r.json();
-        if (!r.ok) throw new Error(data?.error ?? "Erro na API");
+        if (!r.ok) throw new Error(data?.error ?? t.transferenciasTable.erroApi);
         return data;
       })
       .then((data) => {
@@ -126,7 +128,7 @@ export default function TransferenciasTable() {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const expectedPhrase = useMemo(() => {
-    return `DELETAR ${selectedIds.length} TRANSFERENCIAS`;
+    return `${t.transferenciasTable.deletarPhrase} ${selectedIds.length} ${t.transferenciasTable.transferenciasLabel}`;
   }, [selectedIds.length]);
 
   async function deleteSelected() {
@@ -140,7 +142,7 @@ export default function TransferenciasTable() {
     });
 
     const data = await r.json();
-    if (!r.ok) throw new Error(data?.error ?? "Erro ao deletar.");
+    if (!r.ok) throw new Error(data?.error ?? t.transferenciasTable.erroDeletar);
 
     setDeleteOpen(false);
     setSelected({});
@@ -177,7 +179,7 @@ export default function TransferenciasTable() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar atleta ou clube..."
+          placeholder={t.transferenciasTable.buscar}
           className="h-10 w-full sm:w-[280px] rounded-lg border px-3"
         />
 
@@ -186,20 +188,20 @@ export default function TransferenciasTable() {
           onChange={(e) => setPos(e.target.value)}
           className="h-10 rounded-lg border px-3"
         >
-          <option value="">Posição</option>
-          <option value="Ponta">Ponta</option>
-          <option value="Meia">Meia</option>
-          <option value="Atacante">Atacante</option>
-          <option value="Volante">Volante</option>
-          <option value="Lateral">Lateral</option>
-          <option value="Zagueiro">Zagueiro</option>
-          <option value="Goleiro">Goleiro</option>
+          <option value="">{t.transferenciasTable.posicao}</option>
+          <option value="Ponta">{t.transferenciaPosicoes.ponta}</option>
+          <option value="Meia">{t.transferenciaPosicoes.meia}</option>
+          <option value="Atacante">{t.transferenciaPosicoes.atacante}</option>
+          <option value="Volante">{t.transferenciaPosicoes.volante}</option>
+          <option value="Lateral">{t.transferenciaPosicoes.lateral}</option>
+          <option value="Zagueiro">{t.transferenciaPosicoes.zagueiro}</option>
+          <option value="Goleiro">{t.transferenciaPosicoes.goleiro}</option>
         </select>
 
         <input
           value={pais}
           onChange={(e) => setPais(e.target.value)}
-          placeholder="País destino"
+          placeholder={t.transferenciasTable.paisDestino}
           className="h-10 w-[180px] rounded-lg border px-3 hidden md:block"
         />
 
@@ -220,12 +222,12 @@ export default function TransferenciasTable() {
             className="inline-flex items-center gap-2 h-10 px-4 rounded-lg border bg-background hover:bg-muted/40 disabled:opacity-50"
             title={
               selectedIds.length === 0
-                ? "Selecione pelo menos 1 linha"
-                : `Deletar ${selectedIds.length} selecionadas`
+                ? t.transferenciasTable.selecionePeloMenos
+                : `${t.transferenciasTable.deletar} ${selectedIds.length} selecionadas`
             }
           >
             <Trash2 className="w-4 h-4" />
-            Deletar
+            {t.transferenciasTable.deletar}
             {selectedIds.length > 0 ? ` (${selectedIds.length})` : ""}
           </button>
 
@@ -235,7 +237,7 @@ export default function TransferenciasTable() {
               <span className="text-sm text-red-500">{error}</span>
             ) : (
               <span className="text-sm text-muted-foreground">
-                {loading ? "Carregando..." : `${total} registros`}
+                {loading ? t.transferenciasTable.carregando : `${total} ${t.transferenciasTable.registros}`}
               </span>
             )}
 
@@ -266,18 +268,18 @@ export default function TransferenciasTable() {
                     el.indeterminate = !allOnPageSelected && someOnPageSelected;
                   }}
                   onChange={toggleAllOnPage}
-                  aria-label="Selecionar todos da página"
+                  aria-label={t.transferenciasTable.selecionarTodos}
                   className="h-4 w-4"
                 />
               </th>
-              <th className="p-3 text-left">Atleta</th>
-              <th className="p-3">Idade</th>
-              <th className="p-3">Posição</th>
-              <th className="p-3 hidden lg:table-cell">Formador</th>
-              <th className="p-3 hidden xl:table-cell">Origem</th>
-              <th className="p-3">Destino</th>
-              <th className="p-3">Data</th>
-              <th className="p-3 text-right">Valor</th>
+              <th className="p-3 text-left">{t.transferenciasTable.atleta}</th>
+              <th className="p-3">{t.transferenciasTable.idade}</th>
+              <th className="p-3">{t.transferenciasTable.posicao}</th>
+              <th className="p-3 hidden lg:table-cell">{t.transferenciasTable.formador}</th>
+              <th className="p-3 hidden xl:table-cell">{t.transferenciasTable.origem}</th>
+              <th className="p-3">{t.transferenciasTable.destino}</th>
+              <th className="p-3">{t.transferenciasTable.data}</th>
+              <th className="p-3 text-right">{t.transferenciasTable.valor}</th>
             </tr>
           </thead>
 
@@ -285,13 +287,13 @@ export default function TransferenciasTable() {
             {loading ? (
               <tr>
                 <td colSpan={9} className="p-6 text-center text-muted-foreground">
-                  Carregando...
+                  {t.transferenciasTable.carregando}
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={9} className="p-6 text-center text-muted-foreground">
-                  Nenhum resultado.
+                  {t.transferenciasTable.nenhumResultado}
                 </td>
               </tr>
             ) : (
@@ -335,11 +337,11 @@ export default function TransferenciasTable() {
           onClick={() => setPage((p) => Math.max(1, p - 1))}
           className="px-4 py-2 rounded-lg border disabled:opacity-50"
         >
-          Anterior
+          {t.transferenciasTable.anterior}
         </button>
 
         <span className="text-sm text-muted-foreground">
-          Página {page} de {totalPages}
+          {t.transferenciasTable.pagina} {page} {t.transferenciasTable.de} {totalPages}
         </span>
 
         <button
@@ -347,15 +349,15 @@ export default function TransferenciasTable() {
           onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
           className="px-4 py-2 rounded-lg border disabled:opacity-50"
         >
-          Próxima
+          {t.transferenciasTable.proxima}
         </button>
       </div>
 
       {/* confirm delete */}
       <ConfirmDeleteDialog
         open={deleteOpen}
-        title="Deletar transferências selecionadas"
-        description="Essa ação é irreversível. Você vai deletar os registros selecionados desta página."
+        title={t.transferenciasTable.deletarTitle}
+        description={t.transferenciasTable.deletarDesc}
         expectedPhrase={expectedPhrase}
         itemName={`${selectedIds.length} selecionadas`}
         onCancel={() => setDeleteOpen(false)}

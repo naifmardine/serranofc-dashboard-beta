@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { useI18n } from "@/contexts/I18nContext";
 
 type Club = {
   id: string;
@@ -28,7 +29,7 @@ function useClickOutside(open: boolean, onClose: () => void) {
 export default function ClubSelect({
   value,
   onChange,
-  placeholder = "Selecione um clube",
+  placeholder,
   allowClear = true,
 }: {
   value: string | null | undefined; // clubeId
@@ -36,6 +37,7 @@ export default function ClubSelect({
   placeholder?: string;
   allowClear?: boolean;
 }) {
+  const { t } = useI18n();
   const [clubs, setClubs] = useState<Club[]>([]);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -83,7 +85,7 @@ export default function ClubSelect({
           )}
 
           <span className="truncate">
-            {selected ? selected.nome : placeholder}
+            {selected ? selected.nome : (placeholder || t.clubSelect.selecioneClube)}
           </span>
         </div>
 
@@ -95,7 +97,7 @@ export default function ClubSelect({
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar clube..."
+            placeholder={t.clubSelect.buscarClube}
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-[13px] outline-none"
           />
 
@@ -109,7 +111,7 @@ export default function ClubSelect({
                   setOpen(false);
                 }}
               >
-                Remover clube
+                {t.clubSelect.removerClube}
               </button>
             )}
 
@@ -143,7 +145,7 @@ export default function ClubSelect({
 
             {filtered.length === 0 && (
               <div className="px-2.5 py-3 text-sm text-gray-500">
-                Nenhum clube encontrado.
+                {t.clubSelect.nenhumClube}
               </div>
             )}
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useI18n } from "@/contexts/I18nContext";
 
 const SERRANO_BLUE = "#003399";
 const SERRANO_YELLOW = "#F2CD00";
@@ -20,6 +21,7 @@ export default function ExportPrintButton({
   disabled,
   className,
 }: Props) {
+  const { t } = useI18n();
   return (
     <button
       type="button"
@@ -35,8 +37,8 @@ export default function ExportPrintButton({
         "cursor-pointer",
         className ?? "",
       ].join(" ")}
-      aria-label="Exportar PDF"
-      title="Exportar PDF"
+      aria-label={t.exportPdf.exportar}
+      title={t.exportPdf.exportar}
     >
       <div
         className="relative z-10 flex min-h-11 items-center justify-between gap-3 rounded-xl px-4"
@@ -49,10 +51,10 @@ export default function ExportPrintButton({
           <DocsIcon />
           <div className="leading-tight text-left">
             <div className="text-sm font-extrabold text-white">
-              {loading ? "Gerando..." : "Exportar PDF"}
+              {loading ? t.exportPdf.gerando : t.exportPdf.exportar}
             </div>
             <div className="text-[11px] font-semibold text-white/80">
-              {loading ? "Aguarde" : (subtitle ?? "Baixar dashboard")}
+              {loading ? t.exportPdf.aguarde : (subtitle ?? t.exportPdf.baixar)}
             </div>
           </div>
         </div>
@@ -65,7 +67,7 @@ export default function ExportPrintButton({
           ].join(" ")}
           style={{ backgroundColor: "rgba(255,255,255,0.14)", color: "white" }}
         >
-          {loading ? "..." : "Download"}
+          {loading ? "..." : t.exportPdf.download}
         </span>
       </div>
 

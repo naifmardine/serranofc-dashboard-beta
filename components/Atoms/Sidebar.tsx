@@ -8,10 +8,12 @@ import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 
 import { navGroups } from "@/config/nav";
 import type { NavGroup } from "@/config/nav";
-import { useAuth } from "../../app/auth/AuthContext"
+import { useAuth } from "../../app/auth/AuthContext";
+import { useI18n } from "@/contexts/I18nContext";
 
 export default function Sidebar() {
   const { user, loading, logout } = useAuth();
+  const { t } = useI18n();
   const pathname = usePathname();
 
   const [collapsed, setCollapsed] = useState(false);
@@ -38,8 +40,8 @@ export default function Sidebar() {
   // Não inventa role quando não tem user.
   const effectiveRole = user?.role ?? null;
 
-  const displayName = user?.name || user?.email || "Usuário";
-  const displaySub = "Serrano Football Club";
+  const displayName = user?.name || user?.email || t.profile.usuario;
+  const displaySub = t.sidebar.serranoFootballClub;
   const isDense = effectiveRole === "ADMIN";
 
 const handleLogout = async () => {
@@ -48,7 +50,7 @@ const handleLogout = async () => {
 };
 
 
-  // Se ainda está carregando sessão, evita renderizar nav “errada”
+  // Se ainda está carregando sessão, evita renderizar nav "errada"
   if (loading) {
     return (
       <aside
@@ -68,7 +70,7 @@ const handleLogout = async () => {
             />
             {!collapsed && (
               <span className="text-sm font-bold tracking-[0.02em] opacity-80">
-                Serrano FC
+                {t.sidebar.serranFC}
               </span>
             )}
           </div>
@@ -76,8 +78,8 @@ const handleLogout = async () => {
           <button
             type="button"
             onClick={() => setCollapsed((v) => !v)}
-            aria-label={collapsed ? "Expandir sidebar" : "Recolher sidebar"}
-            title={collapsed ? "Expandir" : "Recolher"}
+            aria-label={collapsed ? t.sidebar.expandir : t.sidebar.recolher}
+            title={collapsed ? t.sidebar.expandir : t.sidebar.recolher}
             className="grid h-[26px] w-[26px] place-items-center rounded-lg border border-white/20 bg-transparent text-white transition-colors hover:bg-white/15 cursor-pointer"
           >
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -100,7 +102,7 @@ const handleLogout = async () => {
     );
   }
 
-  // Se não tem user (não autenticado), não mostra sidebar (evita “sem usuário” navegável)
+  // Se não tem user (não autenticado), não mostra sidebar (evita "sem usuário" navegável)
   if (!user) return null;
 
   return (
@@ -116,7 +118,7 @@ const handleLogout = async () => {
         <div className="flex items-center gap-2.5">
           <img
             src="/assets/logo-serrano.svg"
-            alt="Serrano FC"
+            alt={t.sidebar.serranFC}
             className={clsx(
               "object-contain transition-[width,height] duration-200 ease-out",
               collapsed ? "h-8 w-8" : "h-12 w-12",
@@ -124,7 +126,7 @@ const handleLogout = async () => {
           />
           {!collapsed && (
             <span className="text-sm font-bold tracking-[0.02em] transition-opacity duration-150">
-              Serrano FC
+              {t.sidebar.serranFC}
             </span>
           )}
         </div>
@@ -132,8 +134,8 @@ const handleLogout = async () => {
         <button
           type="button"
           onClick={() => setCollapsed((v) => !v)}
-          aria-label={collapsed ? "Expandir sidebar" : "Recolher sidebar"}
-          title={collapsed ? "Expandir" : "Recolher"}
+          aria-label={collapsed ? t.sidebar.expandir : t.sidebar.recolher}
+          title={collapsed ? t.sidebar.expandir : t.sidebar.recolher}
           className="grid h-[26px] w-[26px] place-items-center rounded-lg border border-white/20 bg-transparent text-white transition-colors hover:bg-white/15 cursor-pointer"
         >
           {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -173,7 +175,7 @@ const handleLogout = async () => {
             <div key={g.label} className="mt-2">
               {user.role === "ADMIN" && !collapsed && (
                 <div className="px-2.5 pb-1 text-[11px] font-medium uppercase tracking-[0.12em] text-white/70">
-                  {g.label}
+                  {(t.sidebar as any)[g.labelKey] ?? g.label}
                 </div>
               )}
 
@@ -206,7 +208,7 @@ const handleLogout = async () => {
                       <item.icon size={16} />
                     </span>
                     {!collapsed && (
-                      <span className="ml-2 text-[13px]">{item.label}</span>
+                      <span className="ml-2 text-[13px]">{(t.nav as any)[item.labelKey] ?? item.label}</span>
                     )}
                   </Link>
                 );
@@ -226,10 +228,10 @@ const handleLogout = async () => {
             "transition-colors hover:bg-white/20 hover:text-white cursor-pointer",
             collapsed && "w-10 mx-auto px-0 justify-center",
           )}
-          title="Sair"
+          title={t.sidebar.sair}
         >
           <LogOut size={16} />
-          {!collapsed && <span>Sair</span>}
+          {!collapsed && <span>{t.sidebar.sair}</span>}
         </button>
       </div>
     </aside>

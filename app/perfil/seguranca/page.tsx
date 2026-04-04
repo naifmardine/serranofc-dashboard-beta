@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext";
+import { useI18n } from "@/contexts/I18nContext";
 
 export default function PerfilSegurancaPage() {
   const { user, loading, refreshMe } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -23,13 +25,13 @@ export default function PerfilSegurancaPage() {
 
   const validation = useMemo(() => {
     if (!newPassword) return { ok: false, msg: null as string | null };
-    if (newPassword.length < 10) return { ok: false, msg: "Use pelo menos 10 caracteres." };
+    if (newPassword.length < 10) return { ok: false, msg: t.seguranca.minCaracteres };
     if (newPassword !== confirmNewPassword)
-      return { ok: false, msg: "A confirmação não está igual à nova senha." };
+      return { ok: false, msg: t.seguranca.confirmacaoDiferente };
     if (currentPassword && newPassword === currentPassword)
-      return { ok: false, msg: "A nova senha precisa ser diferente da atual." };
+      return { ok: false, msg: t.seguranca.senhaDiferente };
     return { ok: true, msg: null };
-  }, [newPassword, confirmNewPassword, currentPassword]);
+  }, [newPassword, confirmNewPassword, currentPassword, t]);
 
   if (!loading && !user) {
     router.replace("/login");
@@ -42,7 +44,7 @@ export default function PerfilSegurancaPage() {
     setOk(null);
 
     if (!validation.ok) {
-      setErr(validation.msg || "Verifique os campos.");
+      setErr(validation.msg || t.seguranca.verifiqueCampos);
       return;
     }
 
@@ -71,7 +73,7 @@ export default function PerfilSegurancaPage() {
         throw new Error(data.error || `Erro HTTP ${res.status}`);
       }
 
-      setOk("Senha atualizada com sucesso.");
+      setOk(t.seguranca.senhaAtualizada);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
@@ -79,7 +81,7 @@ export default function PerfilSegurancaPage() {
       await refreshMe?.();
       router.replace("/dashboard");
     } catch (e: any) {
-      setErr(e?.message ?? "Erro ao atualizar senha.");
+      setErr(e?.message ?? t.seguranca.erroAtualizar);
     } finally {
       setSubmitting(false);
     }
@@ -92,11 +94,11 @@ export default function PerfilSegurancaPage() {
           <Lock className="w-4 h-4 text-gray-700" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Segurança</h1>
+          <h1 className="text-xl font-bold text-slate-900">{t.seguranca.title}</h1>
           <p className="text-sm text-gray-600">
             {user?.mustChangePassword
-              ? "Para continuar, você precisa trocar a senha temporária."
-              : "Atualize sua senha quando quiser."}
+              ? t.seguranca.subtitleTemporaria
+              : t.seguranca.subtitle}
           </p>
         </div>
       </div>
@@ -114,11 +116,11 @@ export default function PerfilSegurancaPage() {
       )}
 
       <div className="rounded-2xl border border-gray-200 bg-white px-5 py-4">
-        <h2 className="text-sm font-semibold text-gray-800">Trocar senha</h2>
+        <h2 className="text-sm font-semibold text-gray-800">{t.seguranca.trocarSenha}</h2>
 
         <form onSubmit={onSubmit} className="mt-4 space-y-4">
           <div>
-            <label className="block text-sm font-semibold mb-1">Senha atual</label>
+            <label className="block text-sm font-semibold mb-1">{t.seguranca.senhaAtual}</label>
             <div className="relative">
               <input
                 type={showCurr ? "text" : "password"}
@@ -133,7 +135,6 @@ export default function PerfilSegurancaPage() {
                 onClick={() => setShowCurr((v) => !v)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100"
                 disabled={submitting}
-                title={showCurr ? "Ocultar" : "Mostrar"}
               >
                 {showCurr ? (
                   <EyeOff className="w-4 h-4 text-gray-600" />
@@ -145,7 +146,7 @@ export default function PerfilSegurancaPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold mb-1">Nova senha</label>
+            <label className="block text-sm font-semibold mb-1">{t.seguranca.novaSenha}</label>
             <div className="relative">
               <input
                 type={showNew ? "text" : "password"}
@@ -155,14 +156,13 @@ export default function PerfilSegurancaPage() {
                 minLength={10}
                 disabled={submitting}
                 className="w-full rounded-[10px] border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400"
-                placeholder="Mínimo 10 caracteres"
+                placeholder={t.seguranca.minCaracteres}
               />
               <button
                 type="button"
                 onClick={() => setShowNew((v) => !v)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100"
                 disabled={submitting}
-                title={showNew ? "Ocultar" : "Mostrar"}
               >
                 {showNew ? (
                   <EyeOff className="w-4 h-4 text-gray-600" />
@@ -173,12 +173,12 @@ export default function PerfilSegurancaPage() {
             </div>
 
             <p className="mt-1 text-xs text-gray-500">
-              Dica: use uma senha longa com letras, números e símbolos.
+              {t.profile.dicaSenha}
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold mb-1">Confirmar nova senha</label>
+            <label className="block text-sm font-semibold mb-1">{t.seguranca.confirmarNovaSenha}</label>
             <div className="relative">
               <input
                 type={showConf ? "text" : "password"}
@@ -194,7 +194,6 @@ export default function PerfilSegurancaPage() {
                 onClick={() => setShowConf((v) => !v)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-100"
                 disabled={submitting}
-                title={showConf ? "Ocultar" : "Mostrar"}
               >
                 {showConf ? (
                   <EyeOff className="w-4 h-4 text-gray-600" />
@@ -219,7 +218,7 @@ export default function PerfilSegurancaPage() {
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-800 hover:bg-gray-100 disabled:opacity-60"
                 disabled={submitting}
               >
-                Voltar
+                {t.detail.voltar}
               </button>
             )}
 
@@ -228,7 +227,7 @@ export default function PerfilSegurancaPage() {
               disabled={!validation.ok || submitting}
               className="rounded-lg bg-[#f2d249] px-4 py-2 text-sm font-semibold text-black shadow-sm hover:bg-[#e2c23f] disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {submitting ? "Salvando..." : "Salvar nova senha"}
+              {submitting ? t.seguranca.salvando : t.seguranca.salvarNovaSenha}
             </button>
           </div>
         </form>

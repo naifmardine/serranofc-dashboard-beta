@@ -3,6 +3,7 @@
 import { KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Jogador } from "@/type/jogador";
+import { useI18n } from "@/contexts/I18nContext";
 
 const FALLBACK_DOM =
   'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="%23F2CD00"/></svg>';
@@ -24,27 +25,14 @@ const fmtEUR = (mi: number) =>
     maximumFractionDigits: 2,
   })}M`;
 
-function labelPosicao(p: Jogador["posicao"]): string {
-  const map: Record<string, string> = {
-    GOL: "Goleiro",
-    LD: "Lateral Direito",
-    LE: "Lateral Esquerdo",
-    ZAG: "Zagueiro",
-    VOL: "Volante",
-    MC: "Meio-Campo",
-    MEI: "Meia",
-    PD: "Ponta Direita",
-    PE: "Ponta Esquerda",
-    ATA: "Atacante",
-  };
-  return map[p] ?? p;
-}
+// Position label resolved via i18n in the component below
 
 const tdBaseClasses =
   "px-4 py-3 align-middle border-b border-gray-200 text-slate-900 whitespace-nowrap";
 
 export default function PlayerRow({ player }: { player: Jogador }) {
   const router = useRouter();
+  const { t } = useI18n();
 
   const isDomDireito = player.peDominante === "D";
 
@@ -65,10 +53,20 @@ export default function PlayerRow({ player }: { player: Jogador }) {
     }
   };
 
-  const situacao =
-    player.situacao && String(player.situacao).trim() !== ""
+  const situacao = (() => {
+    const inicio = (player as any).contratoInicio;
+    const fim = (player as any).contratoFim;
+    if (inicio || fim) {
+      const fmt = (iso: string) => {
+        const d = new Date(iso);
+        return `${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+      };
+      return `${inicio ? fmt(inicio) : "?"} - ${fim ? fmt(fim) : t.detail.presente}`;
+    }
+    return player.situacao && String(player.situacao).trim() !== ""
       ? String(player.situacao)
       : "—";
+  })();
 
   const possePct =
     typeof player.possePct === "number"
@@ -125,7 +123,7 @@ export default function PlayerRow({ player }: { player: Jogador }) {
               {player.nome}
             </div>
             <div className="text-xs text-gray-500">
-              {labelPosicao(player.posicao)}
+              {(t.positions as any)[player.posicao] ?? player.posicao}
             </div>
           </div>
         </div>
